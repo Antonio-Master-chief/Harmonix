@@ -37,7 +37,7 @@ export default function Profile() {
       .order('searched_at', { ascending: false })
       .limit(20)
       .then(({ data }) => {
-        setHistory((data as HistoryItem[]) ?? [])
+        setHistory((data as unknown as HistoryItem[]) ?? [])
         setHistLoading(false)
       })
   }, [user])

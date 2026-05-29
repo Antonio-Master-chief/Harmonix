@@ -49,11 +49,11 @@ export default function Home() {
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative min-h-[92vh] flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center overflow-hidden">
 
-        {/* Background radial glow */}
+        {/* Radial glow over image */}
         <div className="absolute inset-0 pointer-events-none">
           <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-3xl"
-            style={{ width: 600, height: 600, background: 'radial-gradient(circle, #6C63FF 0%, transparent 70%)' }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-25 blur-3xl"
+            style={{ width: 700, height: 700, background: 'radial-gradient(circle, #6C63FF 0%, transparent 70%)' }}
           />
         </div>
 

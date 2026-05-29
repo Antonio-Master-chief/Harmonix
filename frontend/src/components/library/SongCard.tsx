@@ -4,7 +4,7 @@ import { Song } from '../../lib/api'
 
 const GENRE_COLORS: Record<string, string> = {
   pop:       '#ec4899', rock: '#f97316', jazz: '#eab308',
-  classical: '#8b5cf6', hip: '#06b6d4', r&b: '#10b981',
+  classical: '#8b5cf6', hip: '#06b6d4', 'r&b': '#10b981',
   electronic:'#6C63FF', folk: '#84cc16', default: '#6C63FF',
 }
 
