@@ -1,0 +1,34 @@
+# Web framework
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# Rate limiting
+slowapi==0.1.9
+
+# Auth (JWT verification)
+python-jose[cryptography]==3.3.0
+
+# Audio processing — core
+librosa==0.10.2
+numpy==1.26.4
+scipy==1.13.0
+soundfile==0.12.1
+
+# Audio processing — additional formats (MP3, WebM via ffmpeg)
+# Requires ffmpeg on PATH or in Dockerfile
+audioread==3.0.1
+
+# Supabase
+supabase==2.5.0
+
+# Environment
+python-dotenv==1.0.1
+
+# MIDI library ingestion (optional but recommended for test library)
+mido==1.3.2
+
+# Vocal separation (optional — only needed for polyphonic library ingestion)
+# Uncomment when ready. Requires PyTorch and ffmpeg.
+# demucs==4.0.1
+# torch>=2.0.0
