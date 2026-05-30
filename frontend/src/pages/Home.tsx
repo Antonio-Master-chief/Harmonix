@@ -273,7 +273,7 @@ export default function Home() {
                         initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
                         className="space-y-4"
                       >
-                        <RecordButton state={recorder.state} duration={recorder.duration} onStart={recorder.start} onStop={recorder.stop} />
+                        <RecordButton state={recorder.state} duration={recorder.duration} canStop={recorder.canStop} onStart={recorder.start} onStop={recorder.stop} />
                         <WaveVisualizer analyser={recorder.analyser} isActive={recorder.state === 'recording'} isProcessing={recorder.state === 'processing'} />
                         {recorder.error && recorder.state !== 'recording' && (
                           <p className="text-xs text-neon-pink text-center font-mono">{recorder.error}</p>
