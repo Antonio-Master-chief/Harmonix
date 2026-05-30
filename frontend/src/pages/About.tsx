@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Mic2, Shield, Search, Music2, Fingerprint } from 'lucide-react'
+import { Mic2, Shield, Search, Music2, Fingerprint, Instagram, Github } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import PageWrapper from '../components/layout/PageWrapper'
 
@@ -50,16 +50,29 @@ export default function About() {
             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-20 h-20">
               <defs>
                 <linearGradient id="herobg" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#7C74FF"/>
-                  <stop offset="100%" stopColor="#4A44C8"/>
+                  <stop offset="0%" stopColor="#1E1455"/>
+                  <stop offset="100%" stopColor="#080620"/>
                 </linearGradient>
+                <linearGradient id="herowg" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%"   stopColor="#6C63FF" stopOpacity="0.15"/>
+                  <stop offset="50%"  stopColor="#C4BFFF"/>
+                  <stop offset="100%" stopColor="#6C63FF" stopOpacity="0.15"/>
+                </linearGradient>
+                <filter id="heroglow">
+                  <feGaussianBlur stdDeviation="2.5" result="b"/>
+                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
               </defs>
               <rect width="100" height="100" rx="22" fill="url(#herobg)"/>
-              <rect x="11" y="35" width="10" height="30" rx="5" fill="white" opacity="0.95"/>
-              <rect x="28" y="25" width="10" height="50" rx="5" fill="white" opacity="0.95"/>
-              <rect x="45" y="16" width="10" height="68" rx="5" fill="white"/>
-              <rect x="62" y="25" width="10" height="50" rx="5" fill="white" opacity="0.95"/>
-              <rect x="79" y="35" width="10" height="30" rx="5" fill="white" opacity="0.95"/>
+              <rect width="100" height="100" rx="22" fill="none" stroke="#6C63FF" strokeWidth="1.5" opacity="0.45"/>
+              <path d="M 18 52 A 32 32 0 0 0 82 52" fill="none" stroke="#6C63FF" strokeWidth="1"   opacity="0.18"/>
+              <path d="M 26 52 A 24 24 0 0 0 74 52" fill="none" stroke="#7C74FF" strokeWidth="1.2" opacity="0.30"/>
+              <path d="M 34 52 A 16 16 0 0 0 66 52" fill="none" stroke="#8B83FF" strokeWidth="1.5" opacity="0.48"/>
+              <path d="M 42 52 A 8 8 0 0 0 58 52" fill="none" stroke="#A78BFA" strokeWidth="2" opacity="0.72"/>
+              <circle cx="50" cy="52" r="9"   fill="#6C63FF" opacity="0.14"/>
+              <circle cx="50" cy="52" r="3.5" fill="#D4CCFF" filter="url(#heroglow)"/>
+              <path d="M 6 74 L 14 74 C 17 74 20 66 23 66 C 26 66 29 74 32 74 C 34 74 37 63 42 59 C 45 56 47 55 50 55 C 53 55 55 56 58 59 C 63 63 66 74 68 74 C 71 74 74 66 77 66 C 80 66 83 74 86 74 L 94 74"
+                    fill="none" stroke="url(#herowg)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </motion.div>
 
@@ -197,13 +210,33 @@ export default function About() {
             >
               AP
             </div>
-            <div className="text-center sm:text-left space-y-3">
+            <div className="text-center sm:text-left space-y-4">
               <h3 className="font-display font-bold text-xl text-white">Antonio Perera</h3>
               <p className="text-purple-light text-sm font-display">Creator &amp; Developer</p>
               <p className="text-zinc-400 leading-relaxed">
                 Antonio built Harmonix with one goal in mind: make music recognition smarter, fairer, and more useful
                 for the people who create music — not just the people who consume it.
               </p>
+              <div className="flex items-center gap-3 justify-center sm:justify-start pt-1">
+                <a
+                  href="https://www.instagram.com/__antonio__perera__/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl glass-hover text-zinc-300 hover:text-white transition-colors text-sm font-display"
+                >
+                  <Instagram className="w-4 h-4 text-purple-light" />
+                  @__antonio__perera__
+                </a>
+                <a
+                  href="https://github.com/Antonio-Master-chief"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl glass-hover text-zinc-300 hover:text-white transition-colors text-sm font-display"
+                >
+                  <Github className="w-4 h-4 text-purple-light" />
+                  GitHub
+                </a>
+              </div>
             </div>
           </div>
         </motion.section>
