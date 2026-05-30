@@ -1,68 +1,37 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, Music2, Binary, Cpu, Zap, Github } from 'lucide-react'
+import { Mic2, Shield, Search, Music2, Fingerprint } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import PageWrapper from '../components/layout/PageWrapper'
 
-const tech = [
-  { name: 'pYIN',           desc: 'Probabilistic pitch extraction' },
-  { name: 'Semitone intervals', desc: 'Transpose-invariant fingerprinting' },
-  { name: 'Skip-grams',     desc: 'Robust to missed notes' },
-  { name: 'DTW',            desc: 'Flexible sequence alignment' },
-  { name: 'Chromagram',     desc: 'Secondary harmonic verification' },
-  { name: 'FastAPI',        desc: 'Python backend' },
-  { name: 'Supabase',       desc: 'Auth + PostgreSQL' },
-  { name: 'React + Vite',   desc: 'Frontend' },
+const capabilities = [
+  {
+    icon: Mic2,
+    title: 'Identify any song by voice',
+    desc: 'Hum it, sing it, whistle it, or just go "la la la". Harmonix figures out the song from the melody alone — no lyrics, no beat, just the tune in your head.',
+  },
+  {
+    icon: Music2,
+    title: 'Off-key? Wrong octave? No problem.',
+    desc: "Nobody sings perfectly. Harmonix is built to understand melody the way humans hear it — it doesn't care what key you sing in or how high or low you go.",
+  },
+  {
+    icon: Fingerprint,
+    title: 'Every melody has a unique signature',
+    desc: 'Two songs can share the same beat, the same tempo, even the same instruments — but no two original melodies are identical. Harmonix knows the difference.',
+  },
+  {
+    icon: Search,
+    title: 'Find music without knowing its name',
+    desc: "Had a melody stuck in your head for days? Sing it into Harmonix. That's all it takes.",
+  },
 ]
 
-// Animated interval diagram — shows the core algorithm concept visually
-function IntervalDiagram() {
-  const notes = ['C', 'E', 'G', 'B', 'D']
-  const intervals = [4, 3, 4, 3]
-
-  return (
-    <div className="flex items-end justify-center gap-0 py-4">
-      {notes.map((note, i) => (
-        <div key={i} className="flex items-end">
-          {/* Note */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.15 }}
-            className="flex flex-col items-center"
-          >
-            <div
-              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center
-                         font-display font-bold text-white text-sm border-2 border-purple-primary"
-              style={{ background: 'rgba(108,99,255,0.2)', boxShadow: '0 0 20px rgba(108,99,255,0.3)' }}
-            >
-              {note}
-            </div>
-          </motion.div>
-
-          {/* Interval arrow */}
-          {i < intervals.length && (
-            <motion.div
-              initial={{ opacity: 0, scaleX: 0 }}
-              whileInView={{ opacity: 1, scaleX: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.15 + 0.1, duration: 0.3 }}
-              className="flex flex-col items-center px-1 sm:px-2 mb-3"
-            >
-              <span className="text-[10px] text-purple-light font-display font-bold mb-0.5">
-                +{intervals[i]}st
-              </span>
-              <div className="flex items-center gap-0.5">
-                <div className="h-0.5 w-6 sm:w-8 bg-purple-primary/60" />
-                <ArrowRight className="w-3 h-3 text-purple-primary" />
-              </div>
-            </motion.div>
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
+const steps = [
+  { num: '01', text: 'An artist composes an original melody and submits it to Harmonix.' },
+  { num: '02', text: 'Harmonix creates a permanent, timestamped record — the earliest submission becomes the original.' },
+  { num: '03', text: 'If the same melody appears in someone else\'s work later, Harmonix identifies it and traces it back to the original source.' },
+  { num: '04', text: 'The artist now has a verifiable, independent record that predates any copies.' },
+]
 
 export default function About() {
   return (
@@ -75,10 +44,23 @@ export default function About() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-            className="w-20 h-20 rounded-3xl bg-purple-glow mx-auto flex items-center justify-center"
+            className="w-20 h-20 rounded-3xl mx-auto flex items-center justify-center overflow-hidden"
             style={{ boxShadow: '0 0 60px rgba(108,99,255,0.4)' }}
           >
-            <Music2 className="w-10 h-10 text-purple-light" />
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-20 h-20">
+              <defs>
+                <linearGradient id="herobg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#7C74FF"/>
+                  <stop offset="100%" stopColor="#4A44C8"/>
+                </linearGradient>
+              </defs>
+              <rect width="100" height="100" rx="22" fill="url(#herobg)"/>
+              <rect x="11" y="35" width="10" height="30" rx="5" fill="white" opacity="0.95"/>
+              <rect x="28" y="25" width="10" height="50" rx="5" fill="white" opacity="0.95"/>
+              <rect x="45" y="16" width="10" height="68" rx="5" fill="white"/>
+              <rect x="62" y="25" width="10" height="50" rx="5" fill="white" opacity="0.95"/>
+              <rect x="79" y="35" width="10" height="30" rx="5" fill="white" opacity="0.95"/>
+            </svg>
           </motion.div>
 
           <motion.h1
@@ -94,52 +76,14 @@ export default function About() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-lg text-zinc-400 max-w-xl mx-auto leading-relaxed"
+            className="text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed"
           >
-            Harmonix identifies music from your voice — not by matching exact notes,
-            but by reading the <em className="text-purple-light not-italic">intervals between them</em>.
-            Sing off-key. Sing in a different octave. We'll still find it.
+            Harmonix is a music recognition platform built around one idea: if you can hear a melody,
+            you should be able to find it — and prove you wrote it first.
           </motion.p>
         </section>
 
-        {/* ── The insight ─────────────────────────────────────────────────── */}
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="glass rounded-3xl p-8 sm:p-12 space-y-6"
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <Binary className="w-5 h-5 text-purple-light" />
-            <span className="text-xs font-display uppercase tracking-widest text-purple-light">The Core Insight</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-display font-bold text-white">
-            Every melody has a unique interval fingerprint
-          </h2>
-          <p className="text-zinc-400 leading-relaxed">
-            Most music apps match <strong className="text-white">exact frequencies</strong> — which breaks the moment you
-            sing in a different key or octave. Harmonix maps the <strong className="text-white">gaps between notes</strong> (in semitones),
-            which stay identical no matter what key you sing in.
-          </p>
-          <p className="text-zinc-400 leading-relaxed">
-            A major third is always <code className="text-purple-light bg-purple-glow px-1.5 py-0.5 rounded text-sm">+4 semitones</code>{' '}
-            whether you sing it at C3 or C6. By chaining 10–15 of these intervals,
-            we create a fingerprint so unique that only one song in the world matches it.
-          </p>
-
-          {/* Visual */}
-          <div className="bg-black/40 rounded-2xl p-6">
-            <p className="text-xs text-zinc-500 font-display text-center mb-4">
-              Melody: C → E → G → B → D (intervals: +4, +3, +4, +3 semitones)
-            </p>
-            <IntervalDiagram />
-            <p className="text-xs text-zinc-600 font-display text-center mt-4">
-              Transpose to A major? The intervals are identical. We still match it.
-            </p>
-          </div>
-        </motion.section>
-
-        {/* ── Algorithm pipeline ──────────────────────────────────────────── */}
+        {/* ── What Harmonix can do ─────────────────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -147,80 +91,123 @@ export default function About() {
           className="space-y-8"
         >
           <div className="text-center">
-            <p className="text-xs font-display uppercase tracking-widest text-purple-light mb-3">Algorithm</p>
-            <h2 className="text-2xl sm:text-3xl font-display font-bold text-white">Six-stage matching pipeline</h2>
+            <p className="text-xs font-display uppercase tracking-widest text-purple-light mb-3">Capabilities</p>
+            <h2 className="text-2xl sm:text-3xl font-display font-bold text-white">What Harmonix can do</h2>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            {capabilities.map(({ icon: Icon, title, desc }) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="glass-hover rounded-2xl p-6 space-y-3"
+              >
+                <div className="w-10 h-10 rounded-xl bg-purple-glow flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-purple-light" />
+                </div>
+                <h3 className="font-display font-semibold text-white">{title}</h3>
+                <p className="text-sm text-zinc-400 leading-relaxed">{desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ── Artist protection ────────────────────────────────────────────── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="glass rounded-3xl p-8 sm:p-12 space-y-8"
+          style={{ boxShadow: '0 0 80px rgba(108,99,255,0.08)' }}
+        >
+          <div className="flex items-center gap-3">
+            <Shield className="w-5 h-5 text-purple-light flex-shrink-0" />
+            <span className="text-xs font-display uppercase tracking-widest text-purple-light">For Artists</span>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-2xl sm:text-3xl font-display font-bold text-white">
+              Be the first. That record is permanent.
+            </h2>
+            <p className="text-zinc-400 leading-relaxed">
+              In music, originality is everything — but proving you wrote something first has always been difficult.
+              Harmonix changes that. The moment an artist submits their melody, Harmonix creates a timestamped record.{' '}
+              <span className="text-white font-medium">The earliest submission becomes the original.</span>
+            </p>
+            <p className="text-zinc-400 leading-relaxed">
+              If your melody later appears in someone else's work, Harmonix will find it and trace it back to you.
+              Your original submission is the proof.
+            </p>
           </div>
 
           <div className="space-y-3">
-            {[
-              { step: '01', title: 'Audio Preprocessing',   desc: 'High-pass filter, normalize, pre-emphasis, trim silence' },
-              { step: '02', title: 'pYIN Pitch Extraction', desc: 'Probabilistic pitch tracker with vibrato smoothing — purpose-built for voice' },
-              { step: '03', title: 'Note Segmentation',     desc: 'Group pitch frames into notes using median pitch (robust to vibrato)' },
-              { step: '04', title: 'Interval Fingerprint',  desc: 'Step-1 + step-2 n-grams at fine (0.5st) + coarse (1.0st) resolution' },
-              { step: '05', title: 'Offset-Based Voting',   desc: 'Consistent position-offset across n-grams = strong match signal' },
-              { step: '06', title: 'DTW + Chromagram',      desc: 'Dynamic Time Warping refines top candidates; chromagram gives independent harmonic verification' },
-            ].map(({ step, title, desc }) => (
-              <div key={step} className="glass-hover rounded-2xl p-5 flex items-start gap-4">
-                <span className="text-3xl font-display font-bold text-purple-primary/30 leading-none w-12 flex-shrink-0">{step}</span>
-                <div>
-                  <h3 className="font-display font-semibold text-white mb-1">{title}</h3>
-                  <p className="text-sm text-zinc-500">{desc}</p>
-                </div>
+            {steps.map(({ num, text }) => (
+              <div key={num} className="flex items-start gap-4 p-4 rounded-xl bg-black/30">
+                <span className="text-2xl font-display font-bold text-purple-primary/40 leading-none w-10 flex-shrink-0">{num}</span>
+                <p className="text-sm text-zinc-300 leading-relaxed pt-0.5">{text}</p>
               </div>
             ))}
           </div>
+
+          <div className="pt-2">
+            <p className="text-sm text-zinc-500 italic">
+              "The first artist to have their work on Harmonix owns that record. If anyone copies it, Harmonix will tell you exactly where they copied it from."
+            </p>
+          </div>
         </motion.section>
 
-        {/* ── Tech stack ──────────────────────────────────────────────────── */}
+        {/* ── Try it ──────────────────────────────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="space-y-6"
+          className="text-center"
         >
-          <div className="flex items-center gap-3">
-            <Cpu className="w-5 h-5 text-purple-light" />
-            <h2 className="text-xl font-display font-bold text-white">Technology</h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {tech.map(({ name, desc }) => (
-              <div key={name} className="glass-hover rounded-xl p-4">
-                <p className="font-display font-semibold text-white text-sm mb-1">{name}</p>
-                <p className="text-xs text-zinc-500">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </motion.section>
-
-        {/* ── CTA ─────────────────────────────────────────────────────────── */}
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center space-y-6 pb-8"
-        >
-          <div
-            className="glass rounded-3xl p-10"
-            style={{ boxShadow: '0 0 80px rgba(108,99,255,0.12)' }}
-          >
-            <Zap className="w-10 h-10 text-purple-light mx-auto mb-4" />
+          <div className="glass rounded-3xl p-10" style={{ boxShadow: '0 0 80px rgba(108,99,255,0.12)' }}>
+            <Mic2 className="w-10 h-10 text-purple-light mx-auto mb-4" />
             <h2 className="text-2xl font-display font-bold text-white mb-3">Try it now</h2>
             <p className="text-zinc-400 mb-6">Sing any melody. See what Harmonix finds.</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/" className="btn-primary flex items-center justify-center gap-2">
-                <Music2 className="w-4 h-4" /> Start identifying
-              </Link>
-              <a
-                href="https://github.com/Antonio-Master-chief/Harmonix"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-ghost flex items-center justify-center gap-2"
-              >
-                <Github className="w-4 h-4" /> View on GitHub
-              </a>
+            <Link to="/" className="btn-primary inline-flex items-center justify-center gap-2">
+              <Music2 className="w-4 h-4" /> Start identifying
+            </Link>
+          </div>
+        </motion.section>
+
+        {/* ── Creator ─────────────────────────────────────────────────────── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="space-y-6 pb-8"
+        >
+          <div className="text-center">
+            <p className="text-xs font-display uppercase tracking-widest text-purple-light mb-3">The Creator</p>
+            <h2 className="text-2xl font-display font-bold text-white">Antonio Perera</h2>
+          </div>
+
+          <div className="glass rounded-3xl p-8 sm:p-10 flex flex-col sm:flex-row items-center gap-8">
+            <div
+              className="w-24 h-24 rounded-full flex items-center justify-center flex-shrink-0 text-3xl font-display font-bold text-white"
+              style={{
+                background: 'linear-gradient(135deg, #7C74FF 0%, #4A44C8 100%)',
+                boxShadow: '0 0 40px rgba(108,99,255,0.4)',
+              }}
+            >
+              AP
+            </div>
+            <div className="text-center sm:text-left space-y-3">
+              <h3 className="font-display font-bold text-xl text-white">Antonio Perera</h3>
+              <p className="text-purple-light text-sm font-display">Creator &amp; Developer</p>
+              <p className="text-zinc-400 leading-relaxed">
+                Antonio built Harmonix with one goal in mind: make music recognition smarter, fairer, and more useful
+                for the people who create music — not just the people who consume it.
+              </p>
             </div>
           </div>
         </motion.section>
+
       </div>
     </PageWrapper>
   )

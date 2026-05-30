@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Music2, Library, User, LogIn, Menu, X, LogOut } from 'lucide-react'
+import { Library, Music2, User, LogIn, Menu, X, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 const links = [
@@ -33,10 +33,22 @@ export default function Navbar() {
 
           {/* Logo — clicking goes to About */}
           <Link to="/about" className="flex items-center gap-2 group">
-            <div className="relative w-8 h-8">
-              <div className="absolute inset-0 rounded-lg bg-purple-primary opacity-80 group-hover:opacity-100 transition-opacity" />
+            <div className="relative w-8 h-8 group-hover:scale-105 transition-transform">
               <div className="absolute inset-0 rounded-lg bg-purple-primary blur-md opacity-40 group-hover:opacity-70 transition-opacity" />
-              <Music2 className="relative w-8 h-8 p-1.5 text-white" />
+              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="relative w-8 h-8">
+                <defs>
+                  <linearGradient id="navbg" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#7C74FF"/>
+                    <stop offset="100%" stopColor="#4A44C8"/>
+                  </linearGradient>
+                </defs>
+                <rect width="100" height="100" rx="22" fill="url(#navbg)"/>
+                <rect x="11" y="35" width="10" height="30" rx="5" fill="white" opacity="0.95"/>
+                <rect x="28" y="25" width="10" height="50" rx="5" fill="white" opacity="0.95"/>
+                <rect x="45" y="16" width="10" height="68" rx="5" fill="white"/>
+                <rect x="62" y="25" width="10" height="50" rx="5" fill="white" opacity="0.95"/>
+                <rect x="79" y="35" width="10" height="30" rx="5" fill="white" opacity="0.95"/>
+              </svg>
             </div>
             <span className="font-display font-bold text-lg tracking-wide">
               <span className="gradient-text">HARMONIX</span>
