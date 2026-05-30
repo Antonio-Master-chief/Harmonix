@@ -1,24 +1,28 @@
 import { motion } from 'framer-motion'
-import { Music2, Clock, Hash } from 'lucide-react'
+import { Music2, Clock } from 'lucide-react'
 import { Song } from '../../lib/api'
 
-const GENRE_COLORS: Record<string, string> = {
-  pop:       '#ec4899', rock: '#f97316', jazz: '#eab308',
-  classical: '#8b5cf6', hip: '#06b6d4', 'r&b': '#10b981',
-  electronic:'#6C63FF', folk: '#84cc16', default: '#6C63FF',
+const GENRE_MAP: Record<string, { color: string; bg: string }> = {
+  pop:       { color: '#F472B6', bg: 'rgba(244,114,182,0.1)' },
+  rock:      { color: '#F97316', bg: 'rgba(249,115,22,0.1)'  },
+  jazz:      { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)'  },
+  classical: { color: '#A78BFA', bg: 'rgba(167,139,250,0.1)' },
+  hip:       { color: '#22D3EE', bg: 'rgba(34,211,238,0.1)'  },
+  'r&b':     { color: '#34D399', bg: 'rgba(52,211,153,0.1)'  },
+  electronic:{ color: '#8B5CF6', bg: 'rgba(139,92,246,0.1)'  },
+  folk:      { color: '#84CC16', bg: 'rgba(132,204,22,0.1)'  },
+  default:   { color: '#8B5CF6', bg: 'rgba(139,92,246,0.1)'  },
 }
 
-function genreColor(genre?: string) {
-  if (!genre) return GENRE_COLORS.default
-  const key = Object.keys(GENRE_COLORS).find(k => genre.toLowerCase().includes(k))
-  return key ? GENRE_COLORS[key] : GENRE_COLORS.default
+function genreStyle(genre?: string) {
+  if (!genre) return GENRE_MAP.default
+  const key = Object.keys(GENRE_MAP).find(k => genre.toLowerCase().includes(k))
+  return key ? GENRE_MAP[key] : GENRE_MAP.default
 }
 
 function formatDuration(s?: number) {
-  if (!s) return '—'
-  const m = Math.floor(s / 60)
-  const sec = Math.round(s % 60).toString().padStart(2, '0')
-  return `${m}:${sec}`
+  if (!s) return null
+  return `${Math.floor(s / 60)}:${Math.round(s % 60).toString().padStart(2, '0')}`
 }
 
 interface Props {
@@ -27,57 +31,45 @@ interface Props {
 }
 
 export default function SongCard({ song, index }: Props) {
-  const color = genreColor(song.genre)
+  const style = genreStyle(song.genre)
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04, duration: 0.4, ease: [0.22,1,0.36,1] }}
-      className="glass-hover rounded-2xl p-5 flex items-center gap-4 group"
+      transition={{ delay: Math.min(index * 0.03, 0.4), duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="panel-hover rounded-xl p-4 flex items-center gap-4 group"
     >
       {/* Icon */}
       <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
-                   transition-transform duration-300 group-hover:scale-110"
-        style={{ background: `${color}22`, boxShadow: `0 0 16px ${color}33` }}
+        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-105"
+        style={{ background: style.bg, border: `1px solid ${style.color}33` }}
       >
-        <Music2 className="w-6 h-6" style={{ color }} />
+        <Music2 className="w-4.5 h-4.5" style={{ color: style.color, width: 18, height: 18 }} />
       </div>
 
       {/* Text */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-display font-semibold text-white truncate">{song.title}</h3>
-        <p className="text-sm text-zinc-500 truncate">{song.artist}</p>
-        {song.album && (
-          <p className="text-xs text-zinc-600 truncate mt-0.5">{song.album}</p>
-        )}
+        <p className="font-display font-semibold text-sm text-white truncate">{song.title}</p>
+        <p className="font-mono text-xs text-muted truncate">{song.artist}</p>
       </div>
 
-      {/* Right side */}
-      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+      {/* Meta */}
+      <div className="flex items-center gap-2 shrink-0">
         {song.genre && (
           <span
-            className="text-xs px-2 py-0.5 rounded-full font-display font-medium"
-            style={{ background: `${color}22`, color }}
+            className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded"
+            style={{ color: style.color, background: style.bg, border: `1px solid ${style.color}33` }}
           >
             {song.genre}
           </span>
         )}
-        <div className="flex items-center gap-3 text-xs text-zinc-600">
-          {song.duration && (
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {formatDuration(song.duration)}
-            </span>
-          )}
-          {song.note_count && (
-            <span className="flex items-center gap-1">
-              <Hash className="w-3 h-3" />
-              {song.note_count}
-            </span>
-          )}
-        </div>
+        {song.duration && (
+          <span className="flex items-center gap-1 font-mono text-[10px] text-muted">
+            <Clock className="w-3 h-3" />
+            {formatDuration(song.duration)}
+          </span>
+        )}
       </div>
     </motion.div>
   )

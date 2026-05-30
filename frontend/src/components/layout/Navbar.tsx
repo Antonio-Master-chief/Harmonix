@@ -1,19 +1,67 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Library, Music2, User, LogIn, Menu, X, LogOut } from 'lucide-react'
+import { Library, Info, User, LogIn, Menu, X, LogOut, Mic } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
-const links = [
-  { to: '/library', label: 'Library',  icon: Library },
-  { to: '/about',   label: 'About',    icon: Music2 },
+const NAV_LINKS = [
+  { to: '/library', label: 'Library', icon: Library },
+  { to: '/about',   label: 'About',   icon: Info    },
 ]
+
+function HxLogo() {
+  return (
+    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8">
+      <rect width="36" height="36" rx="10" fill="url(#logo-bg)" />
+      <rect width="36" height="36" rx="10" fill="none" stroke="url(#logo-border)" strokeWidth="1"/>
+      {/* Sonar arcs */}
+      <path d="M 6 18 A 12 12 0 0 0 30 18" stroke="url(#arc-g)" strokeWidth="0.8" strokeLinecap="round" opacity="0.4"/>
+      <path d="M 9 18 A 9 9 0 0 0 27 18"   stroke="url(#arc-g)" strokeWidth="1"   strokeLinecap="round" opacity="0.6"/>
+      <path d="M 12 18 A 6 6 0 0 0 24 18"  stroke="url(#arc-g)" strokeWidth="1.2" strokeLinecap="round" opacity="0.8"/>
+      <circle cx="18" cy="18" r="2.5" fill="url(#dot-g)" />
+      {/* Waveform */}
+      <path d="M 2 25 L 6 25 C 7 25 8 22 9 22 C 10 22 11 25 12 25 C 13 25 14 20 16 18 C 17 17 17.5 17 18 17 C 18.5 17 19 17 20 18 C 22 20 23 25 24 25 C 25 25 26 22 27 22 C 28 22 29 25 30 25 L 34 25"
+            stroke="url(#wave-g)" strokeWidth="1.5" strokeLinecap="round"/>
+      <defs>
+        <linearGradient id="logo-bg" x1="0" y1="0" x2="36" y2="36">
+          <stop offset="0%" stopColor="#1A0A3A"/>
+          <stop offset="100%" stopColor="#050315"/>
+        </linearGradient>
+        <linearGradient id="logo-border" x1="0" y1="0" x2="36" y2="36">
+          <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.6"/>
+          <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.3"/>
+        </linearGradient>
+        <linearGradient id="arc-g" x1="0" y1="0" x2="36" y2="0">
+          <stop offset="0%" stopColor="#8B5CF6"/>
+          <stop offset="100%" stopColor="#06B6D4"/>
+        </linearGradient>
+        <radialGradient id="dot-g" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#C4B5FD"/>
+          <stop offset="100%" stopColor="#8B5CF6"/>
+        </radialGradient>
+        <linearGradient id="wave-g" x1="0" y1="0" x2="36" y2="0">
+          <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.1"/>
+          <stop offset="45%" stopColor="#A78BFA"/>
+          <stop offset="55%" stopColor="#22D3EE"/>
+          <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.1"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  )
+}
 
 export default function Navbar() {
   const { pathname } = useLocation()
   const navigate     = useNavigate()
   const { user, profile, signOut } = useAuth()
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobileOpen,  setMobileOpen]  = useState(false)
+  const [scrolled,    setScrolled]    = useState(false)
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', handler, { passive: true })
+    return () => window.removeEventListener('scroll', handler)
+  }, [])
 
   const handleSignOut = async () => {
     await signOut()
@@ -24,100 +72,107 @@ export default function Navbar() {
   return (
     <>
       <motion.nav
-        initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0,   opacity: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 py-4"
+        initial={{ y: -72, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 pt-4"
       >
-        <div className="max-w-6xl mx-auto glass rounded-2xl px-5 py-3 flex items-center justify-between">
-
-          {/* Logo — clicking goes to About */}
-          <Link to="/about" className="flex items-center gap-2 group">
-            <div className="relative w-8 h-8 group-hover:scale-105 transition-transform">
-              <div className="absolute inset-0 rounded-lg bg-purple-primary blur-md opacity-40 group-hover:opacity-70 transition-opacity" />
-              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="relative w-8 h-8">
-                <defs>
-                  <linearGradient id="navbg" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#1E1455"/>
-                    <stop offset="100%" stopColor="#080620"/>
-                  </linearGradient>
-                  <linearGradient id="navwg" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%"   stopColor="#6C63FF" stopOpacity="0.15"/>
-                    <stop offset="50%"  stopColor="#C4BFFF"/>
-                    <stop offset="100%" stopColor="#6C63FF" stopOpacity="0.15"/>
-                  </linearGradient>
-                  <filter id="navglow">
-                    <feGaussianBlur stdDeviation="2.5" result="b"/>
-                    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                  </filter>
-                </defs>
-                <rect width="100" height="100" rx="22" fill="url(#navbg)"/>
-                <rect width="100" height="100" rx="22" fill="none" stroke="#6C63FF" strokeWidth="1.5" opacity="0.45"/>
-                <path d="M 18 52 A 32 32 0 0 0 82 52" fill="none" stroke="#6C63FF" strokeWidth="1"   opacity="0.18"/>
-                <path d="M 26 52 A 24 24 0 0 0 74 52" fill="none" stroke="#7C74FF" strokeWidth="1.2" opacity="0.30"/>
-                <path d="M 34 52 A 16 16 0 0 0 66 52" fill="none" stroke="#8B83FF" strokeWidth="1.5" opacity="0.48"/>
-                <path d="M 42 52 A  8  8 0 0 0 58 52" fill="none" stroke="#A78BFA" strokeWidth="2"   opacity="0.72"/>
-                <circle cx="50" cy="52" r="9"   fill="#6C63FF" opacity="0.14"/>
-                <circle cx="50" cy="52" r="3.5" fill="#D4CCFF" filter="url(#navglow)"/>
-                <path d="M 6 74 L 14 74 C 17 74 20 66 23 66 C 26 66 29 74 32 74 C 34 74 37 63 42 59 C 45 56 47 55 50 55 C 53 55 55 56 58 59 C 63 63 66 74 68 74 C 71 74 74 66 77 66 C 80 66 83 74 86 74 L 94 74"
-                      fill="none" stroke="url(#navwg)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+        <div
+          className="max-w-6xl mx-auto px-4 sm:px-5 py-3 rounded-2xl flex items-center justify-between transition-all duration-500"
+          style={{
+            background: scrolled
+              ? 'rgba(10,8,20,0.92)'
+              : 'rgba(10,8,20,0.55)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid rgba(45,43,78,0.7)',
+            boxShadow: scrolled
+              ? '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.08)'
+              : 'none',
+          }}
+        >
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <motion.div
+              whileHover={{ scale: 1.08, rotate: -3 }}
+              transition={{ duration: 0.2 }}
+              style={{ filter: 'drop-shadow(0 0 10px rgba(139,92,246,0.5))' }}
+            >
+              <HxLogo />
+            </motion.div>
+            <div className="flex flex-col leading-none">
+              <span className="font-display font-extrabold text-base tracking-wider gradient-text">HARMONIX</span>
+              <span className="font-mono text-[9px] text-muted tracking-widest uppercase">Music Scanner</span>
             </div>
-            <span className="font-display font-bold text-lg tracking-wide">
-              <span className="gradient-text">HARMONIX</span>
-            </span>
           </Link>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            {links.map(({ to, label }) => (
-              <Link
-                key={to}
-                to={to}
-                className={`px-4 py-2 rounded-lg font-display text-sm font-medium transition-all duration-200
-                  ${pathname === to
-                    ? 'text-purple-light bg-purple-glow'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                  }`}
-              >
-                {label}
-              </Link>
-            ))}
+            {NAV_LINKS.map(({ to, label }) => {
+              const active = pathname === to
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`relative px-4 py-2 font-display font-semibold text-sm transition-all duration-200 rounded-lg
+                    ${active ? 'text-white' : 'text-muted hover:text-white'}`}
+                >
+                  {active && (
+                    <motion.div
+                      layoutId="nav-pill"
+                      className="absolute inset-0 rounded-lg"
+                      style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)' }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative">{label}</span>
+                </Link>
+              )
+            })}
           </div>
 
           {/* Desktop auth */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
             {user && profile ? (
               <>
-                {/* Greeting pill */}
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full glass-hover group"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-200 hover:bg-violet-faint group"
                 >
-                  <div className="w-6 h-6 rounded-full bg-purple-primary flex items-center justify-center text-xs font-bold">
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-display font-bold"
+                    style={{
+                      background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
+                      boxShadow: '0 0 12px rgba(139,92,246,0.4)',
+                    }}
+                  >
                     {profile.username.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-sm text-zinc-300 group-hover:text-white transition-colors font-display">
-                    Hey, <span className="text-purple-light">@{profile.username}</span>
+                  <span className="font-mono text-xs text-muted group-hover:text-white transition-colors">
+                    @{profile.username}
                   </span>
                 </Link>
-                <button onClick={handleSignOut} className="btn-ghost text-sm flex items-center gap-1.5">
-                  <LogOut className="w-3.5 h-3.5" /> Sign out
+                <button
+                  onClick={handleSignOut}
+                  className="btn-ghost text-xs flex items-center gap-1.5 px-3 py-2"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Out
                 </button>
               </>
             ) : (
-              <Link to="/auth" className="btn-primary text-sm flex items-center gap-2">
-                <LogIn className="w-4 h-4" /> Sign in
+              <Link to="/auth" className="btn-primary text-sm flex items-center gap-2 px-4 py-2">
+                <LogIn className="w-3.5 h-3.5" /> Sign in
               </Link>
             )}
           </div>
 
-          {/* Mobile hamburger */}
+          {/* Mobile burger */}
           <button
             onClick={() => setMobileOpen(o => !o)}
-            className="md:hidden p-2 rounded-lg text-zinc-400 hover:text-white transition-colors"
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-white transition-colors"
+            style={{ border: '1px solid rgba(45,43,78,0.8)' }}
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
 
@@ -127,53 +182,48 @@ export default function Navbar() {
             <motion.div
               initial={{ opacity: 0, y: -8, scale: 0.97 }}
               animate={{ opacity: 1, y: 0,  scale: 1 }}
-              exit={{   opacity: 0, y: -8, scale: 0.97 }}
-              transition={{ duration: 0.2 }}
-              className="mt-2 max-w-6xl mx-auto glass rounded-2xl p-4 flex flex-col gap-2"
+              exit={{   opacity: 0, y: -8,  scale: 0.97 }}
+              transition={{ duration: 0.18 }}
+              className="mt-2 max-w-6xl mx-auto panel rounded-2xl p-3 flex flex-col gap-1"
             >
-              {links.map(({ to, label, icon: Icon }) => (
+              <Link to="/" onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:text-white hover:bg-white/5 transition-all font-display text-sm">
+                <Mic className="w-4 h-4" /> Scanner
+              </Link>
+              {NAV_LINKS.map(({ to, label, icon: Icon }) => (
                 <Link
                   key={to}
                   to={to}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-display font-medium transition-all
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-display text-sm transition-all
                     ${pathname === to
-                      ? 'text-purple-light bg-purple-glow'
-                      : 'text-zinc-300 hover:text-white hover:bg-white/5'
+                      ? 'text-violet-light bg-violet-faint'
+                      : 'text-muted hover:text-white hover:bg-white/5'
                     }`}
                 >
                   <Icon className="w-4 h-4" /> {label}
                 </Link>
               ))}
-
-              <div className="border-t border-zinc-800 pt-2 mt-1">
-                {user && profile ? (
-                  <>
-                    <Link
-                      to="/profile"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
-                    >
-                      <User className="w-4 h-4" />
-                      <span className="font-display">@{profile.username}</span>
-                    </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 transition-all text-left"
-                    >
-                      <LogOut className="w-4 h-4" /> Sign out
-                    </button>
-                  </>
-                ) : (
-                  <Link
-                    to="/auth"
-                    onClick={() => setMobileOpen(false)}
-                    className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
-                  >
-                    <LogIn className="w-4 h-4" /> Sign in
+              <div className="h-px bg-border my-1" />
+              {user && profile ? (
+                <>
+                  <Link to="/profile" onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:text-white hover:bg-white/5 transition-all">
+                    <User className="w-4 h-4" />
+                    <span className="font-mono text-xs">@{profile.username}</span>
                   </Link>
-                )}
-              </div>
+                  <button onClick={handleSignOut}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:text-white hover:bg-white/5 transition-all text-left w-full">
+                    <LogOut className="w-4 h-4" />
+                    <span className="font-display text-sm">Sign out</span>
+                  </button>
+                </>
+              ) : (
+                <Link to="/auth" onClick={() => setMobileOpen(false)}
+                  className="btn-primary w-full flex items-center justify-center gap-2 text-sm mt-1">
+                  <LogIn className="w-4 h-4" /> Sign in
+                </Link>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

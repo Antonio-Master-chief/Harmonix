@@ -10,27 +10,12 @@ import Library from './pages/Library'
 import Profile from './pages/Profile'
 import Auth    from './pages/Auth'
 
-const BG_MAP: Record<string, { src: string; overlay: number }> = {
-  '/':        { src: '/images/hero-bg1.png',  overlay: 0.55 },
-  '/about':   { src: '/images/about-bg1.png', overlay: 0.65 },
-  '/library': { src: '/images/about-bg.png',  overlay: 0.68 },
-  '/profile': { src: '/images/profile-bg.png',overlay: 0.65 },
-  '/auth':    { src: '/images/auth-bg.png',   overlay: 0.60 },
-}
-
 function AnimatedRoutes() {
   const location = useLocation()
-  const bg = BG_MAP[location.pathname] ?? BG_MAP['/']
 
   return (
     <>
-      {/* Background lives outside AnimatePresence — no transform stacking-context issue */}
-      <PageBackground
-        key={bg.src}
-        routeKey={bg.src}
-        src={bg.src}
-        overlayOpacity={bg.overlay}
-      />
+      <PageBackground key={location.pathname} routeKey={location.pathname} />
 
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
@@ -49,8 +34,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <FloatingParticles />
         <div className="noise-overlay" />
+        <div className="dot-grid" />
 
         <div className="relative z-10 min-h-screen">
           <Navbar />

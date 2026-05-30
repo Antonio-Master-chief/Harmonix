@@ -1,297 +1,368 @@
-import { useRef, useState } from 'react'
-import { motion, useScroll, useTransform, useSpring, AnimatePresence, useInView } from 'framer-motion'
-import { Mic, Upload, Zap, Shield, Globe, ChevronDown, Fingerprint, Layers, Wand2, ArrowRight } from 'lucide-react'
+import { useRef, useState, useEffect } from 'react'
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
+import { Mic, Upload, Zap, Shield, Fingerprint, Layers, ArrowRight, RotateCcw, Music2, Radio } from 'lucide-react'
 import PageWrapper from '../components/layout/PageWrapper'
 import RecordButton from '../components/home/RecordButton'
 import WaveVisualizer from '../components/home/WaveVisualizer'
 import ResultCard from '../components/home/ResultCard'
 import UploadZone from '../components/home/UploadZone'
-import HowItWorks from '../components/home/HowItWorks'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
 import { IdentifyResponse } from '../lib/api'
 
 type Tab = 'record' | 'upload'
-const SUBTITLES = ['singing.', 'humming.', 'whistling.', 'la-la-la.']
+
+const WORDS = ['singing.', 'humming.', 'whistling.', 'la-la-la.']
+
+const STATS = [
+  { value: '0',    label: 'External APIs',        sub: 'entirely custom-built' },
+  { value: '100%', label: 'Own Algorithm',         sub: 'interval fingerprinting' },
+  { value: '6',    label: 'Pipeline Stages',       sub: 'pYIN → DTW → chroma' },
+  { value: '∞',    label: 'Songs Identifiable',    sub: 'by melody alone' },
+]
 
 const FEATURES = [
-  { icon: Zap,    title: 'Any key works',    desc: 'Transpose-invariant — sing in your own pitch range, not the song\'s.' },
-  { icon: Mic,    title: 'Hum or whistle',   desc: 'No lyrics needed. Your melody alone is the fingerprint.' },
-  { icon: Shield, title: 'Custom algorithm', desc: 'Interval fingerprinting + DTW — built from scratch, zero third-party APIs.' },
-  { icon: Globe,  title: 'Key detection',    desc: 'Tells you what musical key you naturally sang in.' },
+  { icon: Zap,         title: 'Any key',          desc: 'Sing in your range, not the song\'s. Transpose-invariant by design.' },
+  { icon: Mic,         title: 'Hum or whistle',   desc: 'No lyrics needed. Your melody is the fingerprint.' },
+  { icon: Shield,      title: 'Zero third parties', desc: 'Built from scratch. No Shazam, ACRCloud, or external databases.' },
+  { icon: Fingerprint, title: 'Key detection',    desc: 'Detects the musical key you naturally sang in via Krumhansl–Schmuckler.' },
 ]
 
-const ALGO_STEPS = [
-  { icon: Fingerprint, text: 'Semitone interval sequence fingerprinting' },
-  { icon: Layers,      text: 'Dynamic Time Warping (DTW) matching' },
-  { icon: Wand2,       text: 'Key detection from your natural voice' },
+const PIPELINE = [
+  { n: '01', title: 'Preprocess',   desc: '80Hz highpass, normalize, silence trim' },
+  { n: '02', title: 'Pitch extract', desc: 'pYIN algorithm — voiced probability 0.45' },
+  { n: '03', title: 'Segment',      desc: 'MIN_NOTE 80ms, merge within 50ms/0.8st' },
+  { n: '04', title: 'Fingerprint',  desc: 'SHA-256 skip-gram hashing, fine + coarse' },
+  { n: '05', title: 'Vote + DTW',   desc: 'Offset voting, Sakoe-Chiba DTW band 20%' },
+  { n: '06', title: 'Verify',       desc: 'Chromagram 12-key circular shift, KS key' },
 ]
 
-function ScrollProgressBar() {
-  const { scrollYProgress } = useScroll()
-  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 })
+/* Spinning orbital rings behind the scanner */
+function OrbitalRings() {
   return (
-    <motion.div
-      className="fixed top-0 left-0 right-0 h-[2px] z-[60] origin-left"
-      style={{ scaleX, background: 'linear-gradient(90deg, #6C63FF, #A78BFA, #C4BFFF)' }}
-    />
-  )
-}
-
-function SonarOrb() {
-  return (
-    <div className="relative w-72 h-72 mx-auto select-none">
-      {[{ r: 128, op: 0.10 }, { r: 96, op: 0.18 }, { r: 64, op: 0.28 }, { r: 32, op: 0.45 }].map(({ r, op }, i) => (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+      {[220, 300, 380].map((size, i) => (
         <motion.div
           key={i}
-          className="absolute inset-0 flex items-center justify-center"
-          animate={{ opacity: [op, op * 2.2, op] }}
-          transition={{ duration: 2.5 + i * 0.6, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 }}
+          className="absolute rounded-full"
+          style={{
+            width: size,
+            height: size,
+            border: `1px solid rgba(139,92,246,${0.22 - i * 0.06})`,
+            boxShadow: `0 0 ${12 + i * 8}px rgba(139,92,246,${0.15 - i * 0.04}) inset`,
+          }}
+          animate={{ rotate: i % 2 === 0 ? 360 : -360 }}
+          transition={{ duration: 20 + i * 10, repeat: Infinity, ease: 'linear' }}
         >
-          <div className="rounded-full border border-purple-primary" style={{ width: r, height: r, borderColor: `rgba(108,99,255,${op + 0.1})` }} />
+          {/* Dot on ring */}
+          <motion.div
+            className="absolute w-2 h-2 rounded-full"
+            style={{
+              top: -4,
+              left: '50%',
+              marginLeft: -4,
+              background: i === 0 ? '#8B5CF6' : i === 1 ? '#06B6D4' : '#F472B6',
+              boxShadow: `0 0 8px ${i === 0 ? '#8B5CF6' : i === 1 ? '#06B6D4' : '#F472B6'}`,
+            }}
+          />
         </motion.div>
       ))}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <motion.div
-          className="w-7 h-7 rounded-full bg-purple-primary"
-          animate={{
-            scale: [1, 1.5, 1],
-            boxShadow: ['0 0 0px rgba(108,99,255,0.4)', '0 0 48px rgba(108,99,255,0.9)', '0 0 0px rgba(108,99,255,0.4)'],
-          }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      </div>
-      <div className="absolute inset-0 flex items-center pointer-events-none">
-        <svg viewBox="0 0 288 288" className="w-full h-full opacity-55">
-          <defs>
-            <linearGradient id="sonarWave" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%"   stopColor="#6C63FF" stopOpacity="0.05"/>
-              <stop offset="45%"  stopColor="#A78BFA" stopOpacity="0.9"/>
-              <stop offset="55%"  stopColor="#C4BFFF"/>
-              <stop offset="100%" stopColor="#6C63FF" stopOpacity="0.05"/>
-            </linearGradient>
-          </defs>
-          <path
-            d="M 18 144 L 44 144 C 50 144 56 116 64 116 C 72 116 78 144 88 144 C 96 144 102 106 116 96 C 126 89 132 86 144 84 C 156 86 162 89 172 96 C 186 106 192 144 200 144 C 210 144 216 116 224 116 C 232 116 238 144 244 144 L 270 144"
-            fill="none" stroke="url(#sonarWave)" strokeWidth="3.5" strokeLinecap="round"
-          />
-        </svg>
-      </div>
     </div>
   )
 }
 
-function StatBlock({ value, label }: { value: string; label: string }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, amount: 0.5 })
+/* Central scanner orb */
+function ScannerOrb({ isRecording }: { isRecording: boolean }) {
   return (
-    <motion.div ref={ref} initial={{ opacity: 0, y: 24 }} animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="text-center">
-      <div className="font-display font-bold text-4xl sm:text-5xl gradient-text mb-2 leading-none">{value}</div>
-      <div className="text-zinc-500 font-display text-xs sm:text-sm tracking-wide leading-snug">{label}</div>
-    </motion.div>
+    <div className="relative w-52 h-52 mx-auto">
+      {/* Sonar rings */}
+      {isRecording && [0, 1, 2, 3].map(i => (
+        <motion.div
+          key={i}
+          className="absolute inset-0 rounded-full"
+          style={{ border: '1px solid rgba(244,114,182,0.5)' }}
+          initial={{ scale: 1, opacity: 0.6 }}
+          animate={{ scale: 3.5, opacity: 0 }}
+          transition={{
+            duration: 2.2,
+            repeat: Infinity,
+            delay: i * 0.55,
+            ease: 'easeOut',
+          }}
+        />
+      ))}
+      {!isRecording && [0, 1, 2].map(i => (
+        <motion.div
+          key={i}
+          className="absolute inset-0 rounded-full"
+          style={{ border: '1px solid rgba(139,92,246,0.35)' }}
+          initial={{ scale: 1, opacity: 0.5 }}
+          animate={{ scale: 2.8, opacity: 0 }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            delay: i * 0.8,
+            ease: 'easeOut',
+          }}
+        />
+      ))}
+
+      {/* Core */}
+      <motion.div
+        className="absolute inset-0 rounded-full flex items-center justify-center"
+        style={{
+          background: isRecording
+            ? 'radial-gradient(circle, rgba(244,114,182,0.25) 0%, rgba(139,92,246,0.10) 60%, transparent 100%)'
+            : 'radial-gradient(circle, rgba(139,92,246,0.20) 0%, rgba(6,182,212,0.05) 60%, transparent 100%)',
+          border: `1px solid ${isRecording ? 'rgba(244,114,182,0.4)' : 'rgba(139,92,246,0.3)'}`,
+        }}
+        animate={{
+          boxShadow: isRecording
+            ? ['0 0 30px rgba(244,114,182,0.4)', '0 0 80px rgba(244,114,182,0.7)', '0 0 30px rgba(244,114,182,0.4)']
+            : ['0 0 20px rgba(139,92,246,0.2)', '0 0 50px rgba(139,92,246,0.4)', '0 0 20px rgba(139,92,246,0.2)'],
+        }}
+        transition={{ duration: isRecording ? 1.2 : 2.5, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <div
+          className="w-20 h-20 rounded-full flex items-center justify-center"
+          style={{
+            background: isRecording
+              ? 'linear-gradient(135deg, rgba(244,114,182,0.4), rgba(139,92,246,0.4))'
+              : 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.2))',
+          }}
+        >
+          <Radio className={`w-8 h-8 ${isRecording ? 'text-pink-300' : 'text-violet-light'}`} />
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+/* Cycling subtitle word */
+function CycleWord() {
+  const [idx, setIdx] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setIdx(i => (i + 1) % WORDS.length), 2600)
+    return () => clearInterval(t)
+  }, [])
+  return (
+    <AnimatePresence mode="wait">
+      <motion.span key={idx}
+        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.28 }}
+        className="gradient-text font-display font-extrabold"
+      >
+        {WORDS[idx]}
+      </motion.span>
+    </AnimatePresence>
   )
 }
 
 export default function Home() {
   const [tab,          setTab]          = useState<Tab>('record')
-  const [subIdx,       setSubIdx]       = useState(0)
   const [uploadResult, setUploadResult] = useState<IdentifyResponse | null>(null)
   const recorder = useAudioRecorder()
-
-  const heroRef = useRef<HTMLElement>(null)
-  const algRef  = useRef<HTMLElement>(null)
-
-  const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
-  const heroY       = useTransform(heroProgress, [0, 1], [0, -70])
-  const heroBadgeOp = useTransform(heroProgress, [0, 0.5], [1, 0])
-
-  const { scrollYProgress: algProgress } = useScroll({ target: algRef, offset: ['start end', 'end start'] })
-  const orbRotate = useTransform(algProgress, [0, 1], [0, 40])
-  const orbScale  = useTransform(algProgress, [0, 0.5, 1], [0.88, 1.06, 0.94])
 
   const showResult = recorder.state === 'result' || recorder.state === 'error' || !!uploadResult
   const currentResult = recorder.result ?? uploadResult
 
-  useState(() => {
-    const id = setInterval(() => setSubIdx(i => (i + 1) % SUBTITLES.length), 2500)
-    return () => clearInterval(id)
-  })
-
   const handleReset = () => { recorder.reset(); setUploadResult(null) }
+
+  const heroRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0])
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, -60])
 
   return (
     <PageWrapper>
-      <ScrollProgressBar />
 
-      {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section ref={heroRef} className="relative min-h-[92vh] flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center overflow-hidden">
+      {/* ── HERO SCANNER ──────────────────────────────────────────────── */}
+      <div ref={heroRef} className="relative min-h-[94vh] flex flex-col items-center justify-center px-4 overflow-hidden">
+
+        {/* Ambient background glow */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-20 blur-[120px]"
-               style={{ width: 800, height: 800, background: 'radial-gradient(circle, #6C63FF 0%, #A78BFA 40%, transparent 70%)' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-20 blur-[120px]"
+               style={{ background: 'radial-gradient(circle, #8B5CF6 0%, #06B6D4 50%, transparent 70%)' }} />
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
-          style={{ y: heroY, opacity: heroBadgeOp }} transition={{ delay: 0.1 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-purple-primary/30 text-xs font-display text-purple-light mb-8"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-purple-primary animate-pulse" />
-          Interval-based music recognition — No exact pitch required
-        </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-          style={{ y: heroY }}
-          transition={{ delay: 0.2, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-          className="font-display font-bold text-5xl sm:text-7xl md:text-8xl text-white leading-none tracking-tight mb-6"
-        >
-          Feel the key.
-          <br />
-          <span className="gradient-text">Hear the soul.</span>
-        </motion.h1>
+        <OrbitalRings />
 
         <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          style={{ y: heroY, opacity: heroBadgeOp }} transition={{ delay: 0.4 }}
-          className="h-8 flex items-center justify-center mb-12"
+          style={{ opacity: heroOpacity, y: heroY }}
+          className="relative z-10 w-full max-w-md text-center"
         >
-          <span className="text-zinc-500 font-display text-lg mr-2">Identify any song by</span>
-          <AnimatePresence mode="wait">
-            <motion.span key={subIdx}
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="gradient-text font-display font-semibold text-lg"
-            >{SUBTITLES[subIdx]}</motion.span>
-          </AnimatePresence>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-sm"
-        >
-          <AnimatePresence mode="wait">
-            {currentResult && showResult ? (
-              <motion.div key="result"><ResultCard data={currentResult} onReset={handleReset} /></motion.div>
-            ) : (
-              <motion.div key="identifier" className="glass rounded-3xl p-6 space-y-6">
-                <div className="flex bg-black/40 rounded-xl p-1 gap-1">
-                  {(['record', 'upload'] as Tab[]).map(t => (
-                    <button key={t} onClick={() => { setTab(t); handleReset() }}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-display font-medium transition-all duration-250
-                        ${tab === t ? 'bg-purple-primary text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
-                    >
-                      {t === 'record' ? <Mic className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
-                      {t.charAt(0).toUpperCase() + t.slice(1)}
-                    </button>
-                  ))}
-                </div>
-                <AnimatePresence mode="wait">
-                  {tab === 'record' ? (
-                    <motion.div key="record" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }} className="space-y-5">
-                      <RecordButton state={recorder.state} duration={recorder.duration} onStart={recorder.start} onStop={recorder.stop} />
-                      <WaveVisualizer analyser={recorder.analyser} isActive={recorder.state === 'recording'} isProcessing={recorder.state === 'processing'} />
-                      {recorder.error && recorder.state !== 'recording' && (
-                        <p className="text-sm text-red-400 text-center font-display">{recorder.error}</p>
-                      )}
-                    </motion.div>
-                  ) : (
-                    <motion.div key="upload" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}>
-                      <UploadZone onResult={r => setUploadResult(r)} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-zinc-600">
-          <span className="text-xs font-display">Scroll to explore</span>
-          <ChevronDown className="w-4 h-4 animate-bounce" />
-        </motion.div>
-      </section>
-
-      {/* ── Stats Strip ─────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 border-t border-zinc-900/60">
-        <div className="max-w-3xl mx-auto grid grid-cols-3 gap-6 sm:gap-12">
-          <StatBlock value="0"    label="External music databases used" />
-          <StatBlock value="100%" label="Custom-built recognition engine" />
-          <StatBlock value="∞"    label="Songs identifiable by melody alone" />
-        </div>
-      </section>
-
-      {/* ── Algorithm Section ────────────────────────────────────────────── */}
-      <section ref={algRef} className="py-28 px-4 overflow-hidden">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-
+          {/* Status badge */}
           <motion.div
-            initial={{ opacity: 0, x: -56 }} whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.35 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-7"
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full font-mono text-xs text-muted"
+            style={{ border: '1px solid rgba(45,43,78,0.8)', background: 'rgba(14,12,28,0.6)' }}
           >
-            <p className="text-xs font-display uppercase tracking-widest text-purple-light">The Science</p>
-            <h2 className="font-display font-bold text-4xl sm:text-5xl text-white leading-tight">
-              Not pitch matching.<br />
-              <span className="gradient-text">Interval fingerprinting.</span>
-            </h2>
-            <p className="text-zinc-400 text-lg leading-relaxed">
-              Most apps need exact notes. Harmonix reads the{' '}
-              <em className="text-purple-light not-italic font-medium">pattern between notes</em> — the intervals,
-              the melody's shape — which stays identical no matter what key you sing in.
-            </p>
-            <div className="space-y-4 pt-1">
-              {ALGO_STEPS.map(({ icon: Icon, text }, i) => (
-                <motion.div key={i}
-                  initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }} transition={{ delay: i * 0.12 + 0.3, duration: 0.5 }}
-                  className="flex items-center gap-3 text-zinc-300"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-purple-glow flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-4 h-4 text-purple-light" />
-                  </div>
-                  <span className="font-display text-sm">{text}</span>
-                </motion.div>
-              ))}
-            </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />
+            SIGNAL READY — Interval fingerprint engine v2
           </motion.div>
 
-          <motion.div style={{ rotate: orbRotate, scale: orbScale }} className="hidden md:block">
-            <SonarOrb />
+          {/* Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="font-display font-extrabold text-5xl sm:text-6xl md:text-7xl leading-[0.95] tracking-tight mb-3"
+          >
+            <span className="text-white">Name that</span>
+            <br />
+            <span className="gradient-text">melody.</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.35 }}
+            className="text-muted mb-10 flex items-center justify-center gap-2 flex-wrap"
+          >
+            <span className="font-body text-sm">Identify any song by</span>
+            <CycleWord />
+          </motion.p>
+
+          {/* Scanner core */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.45, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <AnimatePresence mode="wait">
+              {currentResult && showResult ? (
+                <motion.div key="result"
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -16 }}>
+                  <ResultCard data={currentResult} onReset={handleReset} />
+                </motion.div>
+              ) : (
+                <motion.div key="scanner"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="neon-card p-6 space-y-5"
+                >
+                  {/* Orb visualization */}
+                  <ScannerOrb isRecording={recorder.state === 'recording'} />
+
+                  {/* Tab switcher */}
+                  <div
+                    className="flex rounded-xl overflow-hidden"
+                    style={{ border: '1px solid rgba(45,43,78,0.8)', background: 'rgba(7,6,15,0.6)' }}
+                  >
+                    {(['record', 'upload'] as Tab[]).map(t => (
+                      <button
+                        key={t}
+                        onClick={() => { setTab(t); handleReset() }}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 font-display font-bold text-xs uppercase tracking-widest transition-all duration-250
+                          ${tab === t
+                            ? 'text-white bg-gradient-to-r from-violet to-violet-dark'
+                            : 'text-muted hover:text-white'
+                          }`}
+                      >
+                        {t === 'record' ? <Mic className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Tab content */}
+                  <AnimatePresence mode="wait">
+                    {tab === 'record' ? (
+                      <motion.div key="rec"
+                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
+                        className="space-y-4"
+                      >
+                        <RecordButton state={recorder.state} duration={recorder.duration} onStart={recorder.start} onStop={recorder.stop} />
+                        <WaveVisualizer analyser={recorder.analyser} isActive={recorder.state === 'recording'} isProcessing={recorder.state === 'processing'} />
+                        {recorder.error && recorder.state !== 'recording' && (
+                          <p className="text-xs text-neon-pink text-center font-mono">{recorder.error}</p>
+                        )}
+                      </motion.div>
+                    ) : (
+                      <motion.div key="upl"
+                        initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+                        <UploadZone onResult={r => setUploadResult(r)} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
+        </motion.div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.8 }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
+        >
+          <span className="font-mono text-[9px] uppercase tracking-widest text-muted opacity-50">scroll</span>
+          <motion.div className="w-px h-8 bg-gradient-to-b from-violet to-transparent opacity-50"
+            animate={{ scaleY: [1, 0.5, 1] }} transition={{ duration: 1.5, repeat: Infinity }} />
+        </motion.div>
+      </div>
+
+      {/* ── STATS STRIP ─────────────────────────────────────────────────── */}
+      <section className="py-16 px-4 border-t" style={{ borderColor: 'rgba(45,43,78,0.5)' }}>
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
+          {STATS.map(({ value, label, sub }, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="stat-card group"
+            >
+              <div className="stat-value gradient-text">{value}</div>
+              <div className="font-display font-semibold text-sm text-white">{label}</div>
+              <div className="font-mono text-[10px] text-muted">{sub}</div>
+            </motion.div>
+          ))}
         </div>
       </section>
 
-      {/* ── Features ─────────────────────────────────────────────────────── */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="text-center mb-16"
+      {/* ── ALGORITHM SECTION ──────────────────────────────────────────── */}
+      <section className="py-24 px-4">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-14 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
           >
-            <p className="text-xs font-display uppercase tracking-widest text-purple-light mb-3">Why Harmonix</p>
-            <h2 className="text-4xl sm:text-5xl font-display font-bold text-white leading-tight">
-              Built<br /><span className="gradient-text">different.</span>
-            </h2>
+            <div>
+              <p className="section-label">The engine</p>
+              <h2 className="font-display font-extrabold text-4xl sm:text-5xl text-white leading-tight">
+                Not pitch.<br />
+                <span className="gradient-text">Intervals.</span>
+              </h2>
+            </div>
+            <p className="text-muted text-sm max-w-xs leading-relaxed font-body">
+              Most apps need exact notes. Harmonix reads the <em className="text-violet-light not-italic">pattern between notes</em> — which stays constant regardless of key.
+            </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {FEATURES.map(({ icon: Icon, title, desc }, i) => (
-              <motion.div key={i}
-                initial={{ opacity: 0, y: 36, scale: 0.94 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          {/* Pipeline steps */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {PIPELINE.map(({ n, title, desc }, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={{ y: -5, transition: { duration: 0.22, ease: 'easeOut' } }}
-                className="glass-hover rounded-2xl p-6 flex items-start gap-4"
+                transition={{ delay: i * 0.07, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -3, transition: { duration: 0.2 } }}
+                className="panel-hover rounded-xl p-5 flex gap-4"
               >
-                <div className="w-11 h-11 rounded-xl bg-purple-glow flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-5 h-5 text-purple-light" />
-                </div>
+                <span className="font-mono text-xs text-violet font-bold shrink-0 mt-0.5">{n}</span>
                 <div>
-                  <h3 className="font-display font-semibold text-white mb-1.5">{title}</h3>
-                  <p className="text-sm text-zinc-500 leading-relaxed">{desc}</p>
+                  <div className="font-display font-bold text-sm text-white mb-1">{title}</div>
+                  <div className="font-mono text-[11px] text-muted leading-relaxed">{desc}</div>
                 </div>
               </motion.div>
             ))}
@@ -299,45 +370,100 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── How It Works ─────────────────────────────────────────────────── */}
-      <HowItWorks />
+      {/* ── FEATURES ────────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 border-t" style={{ borderColor: 'rgba(45,43,78,0.4)' }}>
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-12 text-center"
+          >
+            <p className="section-label">Why Harmonix</p>
+            <h2 className="font-display font-extrabold text-4xl text-white">
+              Built <span className="gradient-text-pink">different.</span>
+            </h2>
+          </motion.div>
 
-      {/* ── CTA ──────────────────────────────────────────────────────────── */}
-      <section className="py-36 px-4 relative overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {FEATURES.map(({ icon: Icon, title, desc }, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.09, duration: 0.5 }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                className="panel-hover rounded-2xl p-6 flex gap-4"
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)' }}
+                >
+                  <Icon className="w-5 h-5 text-violet-light" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-white text-sm mb-1">{title}</h3>
+                  <p className="font-body text-xs text-muted leading-relaxed">{desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ─────────────────────────────────────────────────────────── */}
+      <section className="py-32 px-4 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px] opacity-15"
-               style={{ width: 600, height: 400, background: 'radial-gradient(ellipse, #6C63FF 0%, transparent 70%)' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] rounded-full blur-[100px] opacity-12"
+               style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)' }} />
         </div>
         <motion.div
-          initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.5 }}
-          transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-          className="relative max-w-2xl mx-auto text-center space-y-8"
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="relative max-w-xl mx-auto text-center space-y-7"
         >
-          <h2 className="font-display font-bold text-5xl sm:text-6xl md:text-7xl text-white leading-none tracking-tight">
-            That melody<br />
+          <div className="section-label justify-center flex">signal detected</div>
+          <h2 className="font-display font-extrabold text-5xl sm:text-6xl text-white leading-[0.95]">
+            That tune<br />
             <span className="gradient-text">in your head?</span>
           </h2>
-          <p className="text-zinc-400 text-lg sm:text-xl max-w-md mx-auto leading-relaxed">
-            Sing it. Hum it. Whistle it. We'll find it.<br />No lyrics. No beat. Just you and the tune.
+          <p className="text-muted text-sm max-w-sm mx-auto font-body leading-relaxed">
+            Sing it. Hum it. Whistle it. Harmonix will identify it — no lyrics, no beat, just the melody.
           </p>
           <motion.button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="btn-primary inline-flex items-center gap-2.5 text-base px-8 py-4"
-            whileHover={{ scale: 1.05, y: -2 }}
+            className="btn-primary inline-flex items-center gap-2.5 text-sm"
+            whileHover={{ scale: 1.04, y: -2 }}
             whileTap={{ scale: 0.97 }}
-            transition={{ duration: 0.18 }}
           >
-            Start identifying <ArrowRight className="w-4 h-4" />
+            <Mic className="w-4 h-4" />
+            Start scanning
+            <ArrowRight className="w-4 h-4" />
           </motion.button>
         </motion.div>
       </section>
 
-      {/* ── Footer ───────────────────────────────────────────────────────── */}
-      <footer className="border-t border-zinc-900 py-8 px-4 text-center">
-        <p className="text-sm text-zinc-600 font-display">
-          © 2025 <span className="gradient-text">HARMONIX</span> — Built by Antonio
-        </p>
+      {/* ── FOOTER ──────────────────────────────────────────────────────── */}
+      <footer
+        className="border-t py-8 px-4"
+        style={{ borderColor: 'rgba(45,43,78,0.5)' }}
+      >
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Music2 className="w-3.5 h-3.5 text-violet opacity-60" />
+            <span className="font-mono text-xs text-muted">© 2025 HARMONIX</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="font-mono text-[10px] text-muted opacity-50 uppercase tracking-widest">Interval fingerprint engine</span>
+            <div className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />
+              <span className="font-mono text-[10px] text-neon-green">online</span>
+            </div>
+          </div>
+        </div>
       </footer>
     </PageWrapper>
   )
