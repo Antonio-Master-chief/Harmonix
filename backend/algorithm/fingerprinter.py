@@ -144,8 +144,32 @@ def build_fingerprint(notes: list[Note]) -> "IntervalFingerprint | None":
     )
 
 
-def contour_match_score(c1: list[int], c2: list[int]) -> float:
-    min_len = min(len(c1), len(c2))
-    if min_len == 0:
+def contour_match_score(c1: list[int], c2: list[int], hint_offset: int = 0) -> float:
+    """
+    Best contour overlap sliding c1 over c2.
+    hint_offset (from voting) is checked first so the common case is O(1);
+    full slide follows so mid-song queries still match even if the hint
+    is slightly off.
+    """
+    if not c1 or not c2:
         return 0.0
-    return sum(a == b for a, b in zip(c1[:min_len], c2[:min_len])) / min_len
+    qlen  = len(c1)
+    n_pos = max(1, len(c2) - qlen + 1)
+
+    def _score_at(start: int) -> float:
+        window = c2[start : start + qlen]
+        ml = min(qlen, len(window))
+        if ml == 0:
+            return 0.0
+        return sum(a == b for a, b in zip(c1[:ml], window)) / ml
+
+    # Check voted offset first (fast path for beginning-of-song queries)
+    best = _score_at(max(0, min(hint_offset, n_pos - 1)))
+
+    # Slide over the full song — essential for mid-song queries
+    for start in range(n_pos):
+        sc = _score_at(start)
+        if sc > best:
+            best = sc
+
+    return best

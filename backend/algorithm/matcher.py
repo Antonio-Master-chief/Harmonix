@@ -106,8 +106,12 @@ def vote_candidates(
 # Stage 2 — Contour pre-filter (free)
 # ---------------------------------------------------------------------------
 
-def _passes_contour(query_fp: IntervalFingerprint, song_contour: list[int]) -> tuple[bool, float]:
-    score = contour_match_score(query_fp.contour, song_contour)
+def _passes_contour(
+    query_fp: IntervalFingerprint,
+    song_contour: list[int],
+    hint_offset: int = 0,
+) -> tuple[bool, float]:
+    score = contour_match_score(query_fp.contour, song_contour, hint_offset=hint_offset)
     return score >= CONTOUR_MIN, score
 
 
@@ -134,18 +138,35 @@ def _dtw(seq1: list[float], seq2: list[float]) -> float:
     return float(dtw[n, m]) / max(n, m)
 
 
-def _sliding_dtw(query: list[float], song: list[float]) -> float:
-    """Best DTW over all windows — user can start singing mid-song."""
+def _sliding_dtw(query: list[float], song: list[float], hint_offset: int = 0) -> float:
+    """
+    Best DTW over all windows — user can start singing mid-song.
+    Checks a tight band around hint_offset first (voted position from Stage 1).
+    Then does a full slide at step=2 so no region is skipped.
+    """
     qlen = len(query)
     slen = len(song)
     if slen < qlen:
         return _dtw(query, song)
 
     best = float("inf")
-    for start in range(0, slen - qlen + 1, 2):  # step 2 for speed
+    max_start = slen - qlen
+
+    # Priority band: ±4 positions around the voted offset
+    lo = max(0, hint_offset - 4)
+    hi = min(max_start, hint_offset + 4)
+    for start in range(lo, hi + 1):
         d = _dtw(query, song[start : start + qlen])
         if d < best:
             best = d
+
+    # Full slide (step=2 for speed) — catches mid-song queries where
+    # the hint is off or the song fragment appears multiple times
+    for start in range(0, max_start + 1, 2):
+        d = _dtw(query, song[start : start + qlen])
+        if d < best:
+            best = d
+
     return best
 
 
@@ -182,14 +203,15 @@ def rank_candidates(
 
         song = song_data[song_id]
 
-        # Stage 2 — contour
-        ok, contour_score = _passes_contour(query_fp, song.get("contour", []))
+        # Stage 2 — contour (aligned to voted offset so mid-song queries pass)
+        hint = cand.get("offset", 0)
+        ok, contour_score = _passes_contour(query_fp, song.get("contour", []), hint_offset=hint)
         if not ok:
             continue
 
-        # Stage 3a — DTW (try both step-1 and step-2 song sequences)
-        dtw_s1 = _sliding_dtw(query_fp.intervals_s1, song.get("intervals_s1", []))
-        dtw_s2 = _sliding_dtw(query_fp.intervals_s1, song.get("intervals_s2", []))
+        # Stage 3a — DTW seeded at voted offset, then full slide
+        dtw_s1 = _sliding_dtw(query_fp.intervals_s1, song.get("intervals_s1", []), hint_offset=hint)
+        dtw_s2 = _sliding_dtw(query_fp.intervals_s1, song.get("intervals_s2", []), hint_offset=hint)
         dtw_d  = min(dtw_s1, dtw_s2)
 
         # Stage 3b — chromagram
