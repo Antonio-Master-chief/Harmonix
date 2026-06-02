@@ -77,7 +77,10 @@ def _run_pipeline(file_bytes: bytes, is_polyphonic: bool = False):
         raise HTTPException(400, f"Cannot decode audio: {e}. "
                                   "Supported formats: WAV, MP3, OGG, WebM, FLAC.")
 
-    quality = check_audio_quality(audio)   # raises HTTPException with friendly msg if bad
+    try:
+        quality = check_audio_quality(audio)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
     log.info("Audio quality: %s", quality)
 
     if is_polyphonic:
