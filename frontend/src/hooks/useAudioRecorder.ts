@@ -37,10 +37,12 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const canStopTimerRef = useRef<number | null>(null)
   const silenceStartRef = useRef<number | null>(null)
   const canStopRef      = useRef(false)
+  const stoppingRef     = useRef(false)
 
   const stop = useCallback(async () => {
-    // Guard: only stop if MediaRecorder is actually running
     if (!recorderRef.current || recorderRef.current.state !== 'recording') return
+    if (stoppingRef.current) return
+    stoppingRef.current = true
 
     if (timerRef.current)       { clearInterval(timerRef.current);       timerRef.current = null }
     if (silenceTimerRef.current) { clearInterval(silenceTimerRef.current); silenceTimerRef.current = null }
@@ -69,6 +71,8 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       const msg = e?.response?.data?.detail ?? e.message ?? 'Identification failed'
       setError(msg)
       setState('error')
+    } finally {
+      stoppingRef.current = false
     }
   }, [])
 
@@ -160,6 +164,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     silenceStartRef.current = null
     silAnalyserRef.current  = null
     canStopRef.current      = false
+    stoppingRef.current     = false
     setCanStop(false)
     setAnalyser(null)
     setState('idle')

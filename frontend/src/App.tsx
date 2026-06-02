@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext'
 import Navbar from './components/layout/Navbar'
 import PageBackground from './components/layout/PageBackground'
 import FloatingParticles from './components/ui/FloatingParticles'
+import BackgroundMusicPlayer from './components/audio/BackgroundMusicPlayer'
 import Home    from './pages/Home'
 import About   from './pages/About'
 import Library from './pages/Library'
@@ -39,6 +40,7 @@ export default function App() {
 
         <div className="relative z-10 min-h-screen">
           <Navbar />
+          <BackgroundMusicPlayer />
           <main>
             <AnimatedRoutes />
           </main>

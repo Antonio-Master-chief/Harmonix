@@ -105,7 +105,7 @@ export default function RecordButton({ state, duration, canStop, onStart, onStop
           className="relative rounded-full flex items-center justify-center z-10 transition-opacity duration-500"
           style={{
             background: cfg.bg,
-            boxShadow:  `0 0 40px ${cfg.glow}, 0 0 80px ${cfg.glow.replace(')', ',0.25)')}`,
+            boxShadow:  `0 0 40px ${cfg.glow}, 0 0 80px ${cfg.glow.replace(/[\d.]+\)$/, '0.25)')}`,
             width: 120, height: 120,
             opacity: isRecording && !canStop ? 0.65 : 1,
             cursor: orbClickable ? 'pointer' : 'default',

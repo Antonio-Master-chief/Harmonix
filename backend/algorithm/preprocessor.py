@@ -1,4 +1,5 @@
-import io
+import os
+import tempfile
 import numpy as np
 import librosa
 from scipy.signal import butter, filtfilt
@@ -8,7 +9,15 @@ HOP_LENGTH = 512
 
 
 def load_audio(file_bytes: bytes) -> np.ndarray:
-    audio, _ = librosa.load(io.BytesIO(file_bytes), sr=SAMPLE_RATE, mono=True)
+    # librosa.load(BytesIO) only uses soundfile, which doesn't decode WebM.
+    # A temp file lets audioread fall back to ffmpeg, which handles WebM/Opus.
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        f.write(file_bytes)
+        tmp = f.name
+    try:
+        audio, _ = librosa.load(tmp, sr=SAMPLE_RATE, mono=True)
+    finally:
+        os.unlink(tmp)
     return audio
 
 

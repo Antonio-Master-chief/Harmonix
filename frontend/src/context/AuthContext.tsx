@@ -29,13 +29,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session)
-      if (session) await fetchProfile(session.user.id)
+      if (session) {
+        try { await fetchProfile(session.user.id) } catch {}
+      }
       setLoading(false)
-    })
+    }).catch(() => setLoading(false))
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
-      if (session) fetchProfile(session.user.id)
+      if (session) fetchProfile(session.user.id).catch(() => {})
       else setProfile(null)
     })
 
@@ -43,12 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function fetchProfile(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('id, username, display_name, avatar_url')
       .eq('id', userId)
       .single()
-    if (data) setProfile(data)
+    if (data && !error) setProfile(data)
   }
 
   async function signIn(email: string, password: string) {

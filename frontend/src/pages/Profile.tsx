@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle2, XCircle, Edit2, Check, X, LogOut, Loader2 } from 'lucide-react'
+import { CheckCircle2, XCircle, Edit2, Check, X, LogOut, Loader2, AlertCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -36,8 +36,10 @@ export default function Profile() {
 
   const [history,     setHistory]     = useState<HistoryItem[]>([])
   const [histLoading, setHistLoading] = useState(true)
+  const [histError,   setHistError]   = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [nameVal,     setNameVal]     = useState('')
+  const [saveError,   setSaveError]   = useState<string | null>(null)
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth')
@@ -45,25 +47,35 @@ export default function Profile() {
 
   useEffect(() => {
     if (!user) return
-    supabase
-      .from('search_history')
-      .select('id, confidence, matched, note_count, searched_at, songs(title, artist)')
-      .eq('user_id', user.id)
-      .order('searched_at', { ascending: false })
-      .limit(20)
-      .then(({ data }) => {
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('search_history')
+          .select('id, confidence, matched, note_count, searched_at, songs(title, artist)')
+          .eq('user_id', user.id)
+          .order('searched_at', { ascending: false })
+          .limit(20)
+        if (error) { setHistError(true); return }
         setHistory((data as unknown as HistoryItem[]) ?? [])
+      } catch {
+        setHistError(true)
+      } finally {
         setHistLoading(false)
-      })
+      }
+    }
+    load()
   }, [user])
 
   useEffect(() => {
     if (profile) setNameVal(profile.display_name)
-  }, [profile])
+    else if (user) setNameVal(user.email?.split('@')[0] ?? '')
+  }, [profile, user])
 
   const saveName = async () => {
     if (!user || !nameVal.trim()) return
-    await supabase.from('profiles').update({ display_name: nameVal }).eq('id', user.id)
+    setSaveError(null)
+    const { error } = await supabase.from('profiles').update({ display_name: nameVal.trim() }).eq('id', user.id)
+    if (error) { setSaveError('Failed to save'); return }
     setEditingName(false)
   }
 
@@ -77,13 +89,16 @@ export default function Profile() {
       : 0,
   }
 
-  if (loading || !user || !profile) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-7 h-7 text-violet animate-spin" />
       </div>
     )
   }
+
+  const displayName = profile?.display_name ?? user.email?.split('@')[0] ?? 'User'
+  const username    = profile?.username     ?? user.email?.split('@')[0] ?? 'user'
 
   return (
     <PageWrapper>
@@ -117,7 +132,7 @@ export default function Profile() {
                 boxShadow: '0 0 24px rgba(139,92,246,0.5)',
               }}
             >
-              {profile.username.charAt(0).toUpperCase()}
+              {username.charAt(0).toUpperCase()}
             </div>
 
             <div className="flex-1 min-w-0">
@@ -128,20 +143,20 @@ export default function Profile() {
                     <input
                       value={nameVal}
                       onChange={e => setNameVal(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false) }}
+                      onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setEditingName(false); setSaveError(null) } }}
                       className="font-display font-bold text-lg text-white bg-transparent border-b border-violet focus:outline-none w-full max-w-xs"
                       autoFocus
                     />
                     <button onClick={saveName} className="text-neon-green hover:opacity-80">
                       <Check className="w-4 h-4" />
                     </button>
-                    <button onClick={() => setEditingName(false)} className="text-neon-pink hover:opacity-80">
+                    <button onClick={() => { setEditingName(false); setSaveError(null) }} className="text-neon-pink hover:opacity-80">
                       <X className="w-4 h-4" />
                     </button>
                   </>
                 ) : (
                   <>
-                    <h2 className="font-display font-bold text-lg text-white truncate">{profile.display_name}</h2>
+                    <h2 className="font-display font-bold text-lg text-white truncate">{displayName}</h2>
                     <button
                       onClick={() => setEditingName(true)}
                       className="text-muted hover:text-white transition-colors shrink-0"
@@ -151,9 +166,12 @@ export default function Profile() {
                   </>
                 )}
               </div>
+              {saveError && (
+                <p className="font-mono text-[10px] text-neon-pink mb-1">{saveError}</p>
+              )}
 
               <div className="flex flex-col gap-0.5">
-                <span className="font-mono text-xs text-violet">@{profile.username}</span>
+                <span className="font-mono text-xs text-violet">@{username}</span>
                 <span className="font-mono text-xs text-muted">{user.email}</span>
               </div>
             </div>
@@ -200,6 +218,11 @@ export default function Profile() {
           {histLoading ? (
             <div className="panel rounded-xl py-12 flex justify-center">
               <Loader2 className="w-5 h-5 text-violet animate-spin" />
+            </div>
+          ) : histError ? (
+            <div className="panel rounded-xl py-10 flex flex-col items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-neon-pink opacity-60" />
+              <p className="font-mono text-xs text-muted">Could not load history.</p>
             </div>
           ) : history.length === 0 ? (
             <div className="panel rounded-xl py-12 text-center space-y-2">

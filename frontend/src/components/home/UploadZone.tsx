@@ -46,9 +46,10 @@ export default function UploadZone({ onResult }: Props) {
       onDragOver={e => { e.preventDefault(); setState('dragging') }}
       onDragLeave={() => setState('idle')}
       onDrop={onDrop}
-      onClick={() => state === 'idle' || state === 'error' ? inputRef.current?.click() : undefined}
+      onClick={() => { if (state === 'idle' || state === 'error') inputRef.current?.click() }}
       className={`relative flex flex-col items-center justify-center gap-4 p-8
-                  rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-300
+                  rounded-2xl border-2 border-dashed transition-all duration-300
+                  ${state === 'uploading' ? 'cursor-default' : 'cursor-pointer'}
                   ${state === 'dragging'
                     ? 'border-purple-primary bg-purple-glow'
                     : state === 'error'

@@ -34,8 +34,8 @@ def verify_jwt(token: str) -> dict:
             audience="authenticated",
         )
         return payload
-    except JWTError as e:
-        raise HTTPException(401, f"Invalid token: {e}")
+    except JWTError:
+        raise HTTPException(401, "Invalid or expired token")
 
 
 async def require_auth(
