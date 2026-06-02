@@ -78,7 +78,7 @@ function ScannerOrb({ isRecording }: { isRecording: boolean }) {
       {isRecording && [0, 1, 2, 3].map(i => (
         <motion.div
           key={i}
-          className="absolute inset-0 rounded-full"
+          className="absolute inset-0 rounded-full pointer-events-none"
           style={{ border: '1px solid rgba(244,114,182,0.5)' }}
           initial={{ scale: 1, opacity: 0.6 }}
           animate={{ scale: 3.5, opacity: 0 }}
@@ -93,7 +93,7 @@ function ScannerOrb({ isRecording }: { isRecording: boolean }) {
       {!isRecording && [0, 1, 2].map(i => (
         <motion.div
           key={i}
-          className="absolute inset-0 rounded-full"
+          className="absolute inset-0 rounded-full pointer-events-none"
           style={{ border: '1px solid rgba(139,92,246,0.35)' }}
           initial={{ scale: 1, opacity: 0.5 }}
           animate={{ scale: 2.8, opacity: 0 }}

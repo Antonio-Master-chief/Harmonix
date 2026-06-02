@@ -77,7 +77,7 @@ export default function RecordButton({ state, duration, canStop, onStart, onStop
           {isRecording && [0, 1, 2].map(i => (
             <motion.div
               key={i}
-              className="absolute rounded-full"
+              className="absolute rounded-full pointer-events-none"
               style={{ width: 120, height: 120, border: '1px solid rgba(244,114,182,0.5)' }}
               initial={{ scale: 1, opacity: 0.6 }}
               animate={{ scale: 3.5, opacity: 0 }}
@@ -89,7 +89,7 @@ export default function RecordButton({ state, duration, canStop, onStart, onStop
         {/* Idle pulse */}
         {state === 'idle' && (
           <motion.div
-            className="absolute rounded-full"
+            className="absolute rounded-full pointer-events-none"
             style={{ width: 120, height: 120, background: 'rgba(139,92,246,0.12)' }}
             animate={{ scale: [1, 1.18, 1], opacity: [0.5, 0.15, 0.5] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}

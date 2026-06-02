@@ -56,6 +56,30 @@ function HxLogo() {
   )
 }
 
+const NAV_SUBTITLES = ['music scanner.', 'signal active.', 'melody engine.', 'song detector.', 'ears online.']
+
+function CyclingSubtitle() {
+  const [idx, setIdx] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setIdx(i => (i + 1) % NAV_SUBTITLES.length), 3000)
+    return () => clearInterval(t)
+  }, [])
+  return (
+    <AnimatePresence mode="wait">
+      <motion.span
+        key={idx}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -4 }}
+        transition={{ duration: 0.25 }}
+        className="font-mono text-[9px] text-muted tracking-widest uppercase"
+      >
+        {NAV_SUBTITLES[idx]}
+      </motion.span>
+    </AnimatePresence>
+  )
+}
+
 export default function Navbar() {
   const { pathname } = useLocation()
   const navigate     = useNavigate()
@@ -106,9 +130,9 @@ export default function Navbar() {
             >
               <HxLogo />
             </motion.div>
-            <div className="flex flex-col leading-none">
+            <div className="flex flex-col leading-none overflow-hidden">
               <span className="font-display font-extrabold text-base tracking-wider gradient-text">HARMONIX</span>
-              <span className="font-mono text-[9px] text-muted tracking-widest uppercase">Music Scanner</span>
+              <CyclingSubtitle />
             </div>
           </Link>
 
