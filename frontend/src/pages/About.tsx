@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion'
-import { Mic2, Shield, Search, Music2, Fingerprint, Instagram, Github, ExternalLink } from 'lucide-react'
+import { useState, useRef, useId } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Mic2, Search, Music2, Fingerprint, Instagram, Github, ExternalLink } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import PageWrapper from '../components/layout/PageWrapper'
 
@@ -43,6 +44,201 @@ const fadeIn = {
   viewport: { once: true, amount: 0.25 },
 }
 
+// ── Melody Fingerprint Visualization ────────────────────────────────────────
+
+// Each value is a note height as % from bottom — this shape is the "fingerprint"
+const HEIGHTS   = [42, 68, 30, 82, 55, 90, 38, 74, 50, 62]
+const LABELS    = ['C', 'E', 'B', 'G', 'D', 'A', 'F', 'G', 'C', 'E']
+const SYMS      = ['♩', '♪', '♫', '♬']
+
+const VW = 300, VH = 128, PX = 20, PY = 12
+
+const nx = (i: number) => PX + (i / (HEIGHTS.length - 1)) * (VW - PX * 2)
+const ny = (h: number) => VH - PY - (h / 100) * (VH - PY * 2)
+
+function buildPath(): string {
+  const pts = HEIGHTS.map((h, i) => ({ x: nx(i), y: ny(h) }))
+  let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)]
+    const p1 = pts[i]
+    const p2 = pts[i + 1]
+    const p3 = pts[Math.min(pts.length - 1, i + 2)]
+    const cp1x = (p1.x + (p2.x - p0.x) / 6).toFixed(1)
+    const cp1y = (p1.y + (p2.y - p0.y) / 6).toFixed(1)
+    const cp2x = (p2.x - (p3.x - p1.x) / 6).toFixed(1)
+    const cp2y = (p2.y - (p3.y - p1.y) / 6).toFixed(1)
+    d += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`
+  }
+  return d
+}
+
+const MELODY_PATH = buildPath()
+
+interface FloatNote { id: number; x: number; y: number; sym: string; drift: number }
+
+function MelodyCanvas() {
+  const uid     = useId()
+  const [hov, setHov]       = useState<number | null>(null)
+  const [floats, setFloats] = useState<FloatNote[]>([])
+  const cnt = useRef(0)
+
+  function spawn(i: number) {
+    const id = cnt.current++
+    const item: FloatNote = {
+      id,
+      x:    nx(i),
+      y:    ny(HEIGHTS[i]),
+      sym:  SYMS[id % SYMS.length],
+      drift: (Math.random() - 0.5) * 22,
+    }
+    setFloats(p => [...p, item])
+    setTimeout(() => setFloats(p => p.filter(n => n.id !== id)), 1300)
+  }
+
+  const gradId   = `${uid}gr`
+  const glowId   = `${uid}gl`
+  const nodeGlow = `${uid}ng`
+
+  return (
+    <div className="relative mx-auto" style={{ width: VW, height: VH }}>
+      <svg width={VW} height={VH} style={{ overflow: 'visible' }}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#06B6D4" />
+          </linearGradient>
+          <filter id={glowId}>
+            <feGaussianBlur stdDeviation="5" result="b" />
+            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id={nodeGlow}>
+            <feGaussianBlur stdDeviation="4" result="b" />
+            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+
+        {/* Subtle horizontal grid — evokes an audio editor */}
+        {[0.25, 0.5, 0.75].map((p, i) => (
+          <line key={i}
+            x1={PX}     y1={PY + p * (VH - PY * 2)}
+            x2={VW - PX} y2={PY + p * (VH - PY * 2)}
+            stroke="rgba(139,92,246,0.06)" strokeWidth="1" strokeDasharray="2 10"
+          />
+        ))}
+
+        {/* Ambient glow underneath the curve */}
+        <path
+          d={MELODY_PATH} fill="none"
+          stroke={`url(#${gradId})`} strokeWidth="10" opacity="0.06"
+          filter={`url(#${glowId})`}
+        />
+        {/* Main melody curve */}
+        <motion.path
+          d={MELODY_PATH} fill="none"
+          stroke={`url(#${gradId})`} strokeWidth="1.5" strokeLinecap="round"
+          animate={{ opacity: hov !== null ? 0.72 : 0.42 }}
+          transition={{ duration: 0.3 }}
+        />
+
+        {/* Nodes */}
+        {HEIGHTS.map((h, i) => {
+          const x = nx(i)
+          const y = ny(h)
+          const isH = hov === i
+
+          return (
+            <g
+              key={i}
+              onMouseEnter={() => { setHov(i); spawn(i) }}
+              onMouseLeave={() => setHov(null)}
+              style={{ cursor: 'crosshair' }}
+            >
+              {/* Invisible hit area */}
+              <circle cx={x} cy={y} r={18} fill="transparent" />
+
+              {/* Expanding pulse ring on hover */}
+              <motion.circle
+                cx={x} cy={y}
+                fill="none" stroke="#A78BFA" strokeWidth="1"
+                animate={isH
+                  ? { r: [4, 16], opacity: [0.7, 0], transition: { duration: 0.65, repeat: Infinity, ease: 'easeOut' } }
+                  : { r: 4, opacity: 0, transition: { duration: 0.15 } }
+                }
+              />
+
+              {/* Node dot — bobs gently when idle */}
+              <motion.circle
+                cx={x}
+                initial={{ cy: y, r: 2.5, opacity: 0.55 }}
+                animate={{
+                  cy:      isH ? y : [y - 3.5, y + 3.5],
+                  r:       isH ? 5.5 : 2.5,
+                  opacity: isH ? 1 : 0.55,
+                }}
+                transition={isH
+                  ? { duration: 0.18 }
+                  : {
+                      cy:      { duration: 2.1 + i * 0.22, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut', delay: i * 0.30 },
+                      r:       { duration: 0.18 },
+                      opacity: { duration: 0.18 },
+                    }
+                }
+                fill={isH ? '#C4B5FD' : `url(#${gradId})`}
+                filter={isH ? `url(#${nodeGlow})` : undefined}
+              />
+
+              {/* Note label that appears on hover */}
+              <AnimatePresence>
+                {isH && (
+                  <motion.text
+                    key="lbl"
+                    x={x} textAnchor="middle"
+                    fill="#A78BFA" fontSize="8.5" fontFamily="monospace"
+                    initial={{ opacity: 0, y: y - 10 }}
+                    animate={{ opacity: 0.9, y: y - 14 }}
+                    exit={{ opacity: 0, y: y - 10 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {LABELS[i]}
+                  </motion.text>
+                )}
+              </AnimatePresence>
+            </g>
+          )
+        })}
+      </svg>
+
+      {/* Floating music symbols */}
+      <AnimatePresence>
+        {floats.map(n => (
+          <motion.span
+            key={n.id}
+            initial={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 0, y: -46 }}
+            transition={{ duration: 1.15, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              position:   'absolute',
+              left:       n.x + n.drift,
+              top:        n.y - 10,
+              fontSize:   15,
+              color:      '#A78BFA',
+              pointerEvents: 'none',
+              transform:  'translateX(-50%)',
+              fontFamily: 'Georgia, serif',
+              textShadow: '0 0 12px rgba(167,139,250,0.95)',
+            }}
+          >
+            {n.sym}
+          </motion.span>
+        ))}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 export default function About() {
   return (
     <PageWrapper>
@@ -50,42 +246,33 @@ export default function About() {
 
         {/* ── HERO ──────────────────────────────────────────────────────── */}
         <section className="text-center pt-6 space-y-6">
+
+          {/* Interactive melody fingerprint visualization */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 22 }}
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 180, damping: 22 }}
+            className="inline-block mx-auto mb-2"
             style={{
-              background: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.15))',
-              border: '1px solid rgba(139,92,246,0.4)',
-              boxShadow: '0 0 40px rgba(139,92,246,0.3)',
+              background:    'rgba(7,6,15,0.9)',
+              border:        '1px solid rgba(139,92,246,0.14)',
+              borderRadius:  18,
+              padding:       '14px 10px 8px',
+              boxShadow:     '0 0 60px rgba(139,92,246,0.07), inset 0 1px 0 rgba(255,255,255,0.03)',
             }}
           >
-            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10">
-              <defs>
-                <linearGradient id="ab-arc" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#8B5CF6"/>
-                  <stop offset="100%" stopColor="#06B6D4"/>
-                </linearGradient>
-                <linearGradient id="ab-wave" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%"   stopColor="#8B5CF6" stopOpacity="0.1"/>
-                  <stop offset="45%"  stopColor="#A78BFA"/>
-                  <stop offset="55%"  stopColor="#22D3EE"/>
-                  <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.1"/>
-                </linearGradient>
-                <filter id="ab-glow">
-                  <feGaussianBlur stdDeviation="2.5" result="b"/>
-                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                </filter>
-              </defs>
-              <path d="M 18 52 A 32 32 0 0 0 82 52" fill="none" stroke="url(#ab-arc)" strokeWidth="1.2" opacity="0.3"/>
-              <path d="M 26 52 A 24 24 0 0 0 74 52" fill="none" stroke="url(#ab-arc)" strokeWidth="1.5" opacity="0.5"/>
-              <path d="M 34 52 A 16 16 0 0 0 66 52" fill="none" stroke="url(#ab-arc)" strokeWidth="2"   opacity="0.7"/>
-              <path d="M 42 52 A 8 8 0 0 0 58 52"   fill="none" stroke="url(#ab-arc)" strokeWidth="2.5" opacity="0.9"/>
-              <circle cx="50" cy="52" r="3.5" fill="#C4B5FD" filter="url(#ab-glow)"/>
-              <path d="M 6 74 L 14 74 C 17 74 20 66 23 66 C 26 66 29 74 32 74 C 34 74 37 63 42 59 C 45 56 47 55 50 55 C 53 55 55 56 58 59 C 63 63 66 74 68 74 C 71 74 74 66 77 66 C 80 66 83 74 86 74 L 94 74"
-                    fill="none" stroke="url(#ab-wave)" strokeWidth="2.5" strokeLinecap="round"/>
-            </svg>
+            <MelodyCanvas />
+            <p style={{
+              textAlign:     'center',
+              marginTop:     6,
+              fontSize:      8,
+              fontFamily:    '"Space Mono", monospace',
+              color:         'rgba(167,139,250,0.35)',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+            }}>
+              melody fingerprint · hover to interact
+            </p>
           </motion.div>
 
           <motion.div
@@ -134,10 +321,7 @@ export default function About() {
               >
                 <div
                   className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300"
-                  style={{
-                    background: `${accent}14`,
-                    border: `1px solid ${accent}33`,
-                  }}
+                  style={{ background: `${accent}14`, border: `1px solid ${accent}33` }}
                 >
                   <Icon className="w-5 h-5 transition-colors duration-300" style={{ color: accent }} />
                 </div>
@@ -209,12 +393,11 @@ export default function About() {
             className="panel rounded-2xl p-6 flex flex-col sm:flex-row gap-6 items-start"
             style={{ boxShadow: '0 0 40px rgba(139,92,246,0.08)' }}
           >
-            {/* Avatar */}
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 font-display font-extrabold text-2xl text-white"
               style={{
                 background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
-                boxShadow: '0 0 24px rgba(139,92,246,0.5)',
+                boxShadow:  '0 0 24px rgba(139,92,246,0.5)',
               }}
             >
               A
@@ -229,8 +412,7 @@ export default function About() {
               <div className="flex gap-3 flex-wrap">
                 <a
                   href="https://www.instagram.com/__antonio__perera__/"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-xs text-muted hover:text-white transition-colors"
                   style={{ border: '1px solid rgba(45,43,78,0.8)' }}
                 >
@@ -239,8 +421,7 @@ export default function About() {
                 </a>
                 <a
                   href="https://github.com/Antonio-Master-chief"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-xs text-muted hover:text-white transition-colors"
                   style={{ border: '1px solid rgba(45,43,78,0.8)' }}
                 >
@@ -249,8 +430,7 @@ export default function About() {
                 </a>
                 <a
                   href="https://github.com/Antonio-Master-chief/Harmonix"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-xs text-violet-light transition-all"
                   style={{ border: '1px solid rgba(139,92,246,0.4)', background: 'rgba(139,92,246,0.08)' }}
                 >
