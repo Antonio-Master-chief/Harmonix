@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
-import { Mic, Upload, Zap, Shield, Fingerprint, Layers, ArrowRight, RotateCcw, Music2, Radio } from 'lucide-react'
+import { Mic, Upload, Zap, Shield, Fingerprint, Layers, ArrowRight, RotateCcw, Music, Radio } from 'lucide-react'
 import PageWrapper from '../components/layout/PageWrapper'
 import RecordButton from '../components/home/RecordButton'
 import WaveVisualizer from '../components/home/WaveVisualizer'
@@ -434,7 +434,13 @@ export default function Home() {
             Sing it. Hum it. Whistle it. Harmonix will identify it — no lyrics, no beat, just the melody.
           </p>
           <motion.button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => {
+              setTab('record')
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+              setTimeout(() => {
+                if (recorder.state === 'idle') recorder.start()
+              }, 700)
+            }}
             className="btn-primary inline-flex items-center gap-2.5 text-sm"
             whileHover={{ scale: 1.04, y: -2 }}
             whileTap={{ scale: 0.97 }}
@@ -453,8 +459,8 @@ export default function Home() {
       >
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Music2 className="w-3.5 h-3.5 text-violet opacity-60" />
-            <span className="font-mono text-xs text-muted">© 2025 HARMONIX</span>
+            <Music className="w-3.5 h-3.5 text-violet opacity-60" />
+            <span className="font-mono text-xs text-muted">© 2025 HARMONIX by Antonio</span>
           </div>
           <div className="flex items-center gap-4">
             <span className="font-mono text-[10px] text-muted opacity-50 uppercase tracking-widest">Interval fingerprint engine</span>

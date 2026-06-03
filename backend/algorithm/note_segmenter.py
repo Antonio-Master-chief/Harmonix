@@ -2,11 +2,11 @@ import numpy as np
 from dataclasses import dataclass
 from .pitch_extractor import PitchFrame
 
-MIN_NOTE_DURATION   = 0.08   # seconds — below this is ornament/noise, not a real note
-MAX_PITCH_SPREAD    = 1.5    # semitones — max variation for frames to belong to same note
-MAX_FRAME_GAP       = 0.12   # seconds — gap larger than this splits into two notes
-MERGE_GAP           = 0.06   # seconds — merge adjacent notes if gap ≤ this and pitch close
-MERGE_PITCH_DIFF    = 0.8    # semitones — pitch closeness for merging
+MIN_NOTE_DURATION   = 0.06   # seconds — lowered to catch shorter whistled/hummed notes
+MAX_PITCH_SPREAD    = 2.0    # semitones — raised for humming pitch drift tolerance
+MAX_FRAME_GAP       = 0.14   # seconds — slightly wider gap for breath pauses
+MERGE_GAP           = 0.10   # seconds — merge notes with larger gaps (breath in humming)
+MERGE_PITCH_DIFF    = 1.2    # semitones — raised for vibrato/pitch wobble tolerance
 
 
 @dataclass

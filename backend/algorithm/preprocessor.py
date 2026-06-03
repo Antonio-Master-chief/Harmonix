@@ -150,6 +150,6 @@ def preprocess(file_bytes: bytes) -> np.ndarray:
     audio = reduce_noise(audio)
     audio = isolate_harmonic(audio)
     audio = normalize(audio)      # re-normalize — HPSS shifts the level
-    audio = trim_silence(audio)
+    audio = trim_silence(audio, top_db=35)
     audio = preemphasis(audio)
     return audio

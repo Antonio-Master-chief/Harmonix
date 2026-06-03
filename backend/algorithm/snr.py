@@ -10,9 +10,9 @@ import numpy as np
 import librosa
 
 SAMPLE_RATE       = 22050
-MIN_VOICED_RATIO  = 0.12    # at least 12% of frames must have pitch signal
+MIN_VOICED_RATIO  = 0.08    # at least 8% of frames must have pitch signal — lowered for humming
 CLIPPING_THRESHOLD = 0.98   # fraction of peak samples that signal clipping
-MIN_DURATION      = 2.0     # seconds — must be at least this long
+MIN_DURATION      = 1.5     # seconds — must be at least this long
 MAX_DURATION      = 60.0    # seconds — cap processing time
 
 

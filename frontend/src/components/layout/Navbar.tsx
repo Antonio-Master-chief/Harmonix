@@ -9,47 +9,26 @@ const NAV_LINKS = [
   { to: '/about',   label: 'About',   icon: Info    },
 ]
 
-function HxLogo() {
+function QuaverLogo() {
   const uid = useId()
-  const ids = {
-    bg:     `${uid}-bg`,
-    border: `${uid}-border`,
-    arc:    `${uid}-arc`,
-    dot:    `${uid}-dot`,
-    wave:   `${uid}-wave`,
-  }
+  const ids = { bg: `${uid}-bg`, note: `${uid}-note` }
   return (
     <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8">
       <rect width="36" height="36" rx="10" fill={`url(#${ids.bg})`} />
-      <rect width="36" height="36" rx="10" fill="none" stroke={`url(#${ids.border})`} strokeWidth="1"/>
-      <path d="M 6 18 A 12 12 0 0 0 30 18" stroke={`url(#${ids.arc})`} strokeWidth="0.8" strokeLinecap="round" opacity="0.4"/>
-      <path d="M 9 18 A 9 9 0 0 0 27 18"   stroke={`url(#${ids.arc})`} strokeWidth="1"   strokeLinecap="round" opacity="0.6"/>
-      <path d="M 12 18 A 6 6 0 0 0 24 18"  stroke={`url(#${ids.arc})`} strokeWidth="1.2" strokeLinecap="round" opacity="0.8"/>
-      <circle cx="18" cy="18" r="2.5" fill={`url(#${ids.dot})`} />
-      <path d="M 2 25 L 6 25 C 7 25 8 22 9 22 C 10 22 11 25 12 25 C 13 25 14 20 16 18 C 17 17 17.5 17 18 17 C 18.5 17 19 17 20 18 C 22 20 23 25 24 25 C 25 25 26 22 27 22 C 28 22 29 25 30 25 L 34 25"
-            stroke={`url(#${ids.wave})`} strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Note head */}
+      <ellipse cx="13" cy="27.5" rx="5.5" ry="3.8" transform="rotate(-20 13 27.5)" fill={`url(#${ids.note})`} />
+      {/* Stem */}
+      <line x1="18.5" y1="25.5" x2="18.5" y2="8" stroke={`url(#${ids.note})`} strokeWidth="2" strokeLinecap="round" />
+      {/* Flag */}
+      <path d="M 18.5 8 C 25 10 27 16 20 22" stroke={`url(#${ids.note})`} strokeWidth="2" fill="none" strokeLinecap="round" />
       <defs>
         <linearGradient id={ids.bg} x1="0" y1="0" x2="36" y2="36">
-          <stop offset="0%" stopColor="#1A0A3A"/>
-          <stop offset="100%" stopColor="#050315"/>
+          <stop offset="0%" stopColor="#1A0A3A" />
+          <stop offset="100%" stopColor="#050315" />
         </linearGradient>
-        <linearGradient id={ids.border} x1="0" y1="0" x2="36" y2="36">
-          <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.6"/>
-          <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.3"/>
-        </linearGradient>
-        <linearGradient id={ids.arc} x1="0" y1="0" x2="36" y2="0">
-          <stop offset="0%" stopColor="#8B5CF6"/>
-          <stop offset="100%" stopColor="#06B6D4"/>
-        </linearGradient>
-        <radialGradient id={ids.dot} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#C4B5FD"/>
-          <stop offset="100%" stopColor="#8B5CF6"/>
-        </radialGradient>
-        <linearGradient id={ids.wave} x1="0" y1="0" x2="36" y2="0">
-          <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.1"/>
-          <stop offset="45%" stopColor="#A78BFA"/>
-          <stop offset="55%" stopColor="#22D3EE"/>
-          <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.1"/>
+        <linearGradient id={ids.note} x1="13" y1="8" x2="18" y2="28" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#A78BFA" />
+          <stop offset="100%" stopColor="#22D3EE" />
         </linearGradient>
       </defs>
     </svg>
@@ -128,7 +107,7 @@ export default function Navbar() {
               transition={{ duration: 0.2 }}
               style={{ filter: 'drop-shadow(0 0 10px rgba(139,92,246,0.5))' }}
             >
-              <HxLogo />
+              <QuaverLogo />
             </motion.div>
             <div className="flex flex-col leading-none overflow-hidden">
               <span className="font-display font-extrabold text-base tracking-wider gradient-text">HARMONIX</span>
