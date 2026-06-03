@@ -149,13 +149,10 @@ export default function Navbar() {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-200 hover:bg-violet-faint group"
                 >
                   <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-display font-bold"
-                    style={{
-                      background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
-                      boxShadow: '0 0 12px rgba(139,92,246,0.4)',
-                    }}
+                    className="w-7 h-7 rounded-lg overflow-hidden"
+                    style={{ boxShadow: '0 0 12px rgba(139,92,246,0.4)', border: '1px solid rgba(139,92,246,0.4)' }}
                   >
-                    {(profile?.username ?? user.email ?? '?').charAt(0).toUpperCase()}
+                    <img src="/me_a.png" alt="profile" className="w-full h-full object-cover" />
                   </div>
                   <span className="font-mono text-xs text-muted group-hover:text-white transition-colors">
                     {profile ? `@${profile.username}` : (user.email ?? '')}

@@ -394,13 +394,10 @@ export default function About() {
             style={{ boxShadow: '0 0 40px rgba(139,92,246,0.08)' }}
           >
             <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 font-display font-extrabold text-2xl text-white"
-              style={{
-                background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
-                boxShadow:  '0 0 24px rgba(139,92,246,0.5)',
-              }}
+              className="w-16 h-16 rounded-2xl shrink-0 overflow-hidden"
+              style={{ boxShadow: '0 0 24px rgba(139,92,246,0.5)', border: '1px solid rgba(139,92,246,0.4)' }}
             >
-              A
+              <img src="/me_a.png" alt="Antonio Perera" className="w-full h-full object-cover" />
             </div>
 
             <div className="flex-1">

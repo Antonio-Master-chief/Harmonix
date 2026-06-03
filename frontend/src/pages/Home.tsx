@@ -190,18 +190,6 @@ export default function Home() {
           style={{ opacity: heroOpacity, y: heroY }}
           className="relative z-10 w-full max-w-md text-center"
         >
-          {/* Status badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full font-mono text-xs text-muted"
-            style={{ border: '1px solid rgba(45,43,78,0.8)', background: 'rgba(14,12,28,0.6)' }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />
-            SIGNAL READY — Interval fingerprint engine v2
-          </motion.div>
-
           {/* Headline */}
           <motion.h1
             initial={{ opacity: 0, y: 24 }}
