@@ -73,12 +73,7 @@ function WelcomeBack({ username, onSignOut }: { username: string; onSignOut: () 
   return (
     <PageWrapper>
       <div className="min-h-[88vh] flex items-center justify-center px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 28 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-sm text-center"
-        >
+        <div className="w-full max-w-sm text-center">
           {/* Animated waveform bars */}
           <div className="flex items-end justify-center gap-0.5 h-10 mb-8">
             {bars.map((_, i) => (
@@ -130,7 +125,7 @@ function WelcomeBack({ username, onSignOut }: { username: string; onSignOut: () 
           >
             <LogOut className="w-3 h-3" /> Not you? Sign out
           </button>
-        </motion.div>
+        </div>
       </div>
     </PageWrapper>
   )
@@ -188,12 +183,7 @@ export default function Auth() {
   return (
     <PageWrapper>
       <div className="min-h-[88vh] flex items-center justify-center px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full max-w-sm"
-        >
+        <div className="w-full max-w-sm">
           {/* Logo */}
           <div className="text-center mb-10">
             <Link to="/" className="inline-flex flex-col items-center gap-2 group">
@@ -327,7 +317,7 @@ export default function Auth() {
           <p className="text-center font-mono text-[10px] text-muted mt-6 uppercase tracking-widest">
             Music identification engine · Harmonix v2
           </p>
-        </motion.div>
+        </div>
       </div>
     </PageWrapper>
   )
