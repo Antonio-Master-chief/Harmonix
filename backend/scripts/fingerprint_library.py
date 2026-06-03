@@ -35,15 +35,18 @@ CLIP_DURATION = 75.0    # grab 75 s — covers first chorus and beyond
 # ---------------------------------------------------------------------------
 
 def get_pending(db, limit=None):
-    """Songs that have no rows in the fingerprints table yet."""
-    done_ids = {r["song_id"] for r in
-                db.table("fingerprints").select("song_id").execute().data}
-    all_songs = (db.table("songs")
-                   .select("id, title, artist")
-                   .order("created_at")
-                   .execute().data)
-    pending = [s for s in all_songs if s["id"] not in done_ids]
-    return pending[:limit] if limit else pending
+    """Songs whose note_count is still NULL (not yet fingerprinted).
+
+    Checking note_count on the songs table avoids querying the fingerprints
+    table, which can have tens of thousands of rows and hits Supabase's default
+    1 000-row page limit — causing a false count of done songs.
+    """
+    rows = (db.table("songs")
+              .select("id, title, artist")
+              .is_("note_count", "null")
+              .order("created_at")
+              .execute().data)
+    return rows[:limit] if limit else rows
 
 
 def store_fingerprint(db, song_id, fp, chroma_mean):
