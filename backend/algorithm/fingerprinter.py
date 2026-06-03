@@ -91,7 +91,8 @@ def _quantize(v: float, step: float) -> float:
 
 
 def _hash(pitch_tuple: tuple) -> int:
-    return int(hashlib.sha256(str(pitch_tuple).encode()).hexdigest()[:16], 16)
+    h = int(hashlib.sha256(str(pitch_tuple).encode()).hexdigest()[:16], 16)
+    return h & 0x7FFFFFFFFFFFFFFF   # clamp to PostgreSQL bigint range (signed 64-bit)
 
 
 def _build_ngrams(intervals: list[float],
