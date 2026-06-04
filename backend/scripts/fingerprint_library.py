@@ -7,11 +7,14 @@ Usage (from the backend/ directory):
     py -3 scripts/fingerprint_library.py              # all pending
     py -3 scripts/fingerprint_library.py --limit 5   # first 5 only
     py -3 scripts/fingerprint_library.py --dry-run   # list without processing
+    py -3 scripts/fingerprint_library.py --rescan    # re-fingerprint ALL songs (wipes existing)
+    py -3 scripts/fingerprint_library.py --rescan --limit 5  # rescan first 5 only
 """
 
 import os, sys, time, argparse, tempfile, subprocess
 import librosa
 import numpy as np
+from scipy.signal import butter, filtfilt
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -30,23 +33,46 @@ CLIP_OFFSET   = 20.0    # start 20 s in — skip intros
 CLIP_DURATION = 75.0    # grab 75 s — covers first chorus and beyond
 
 
+def _vocal_bandpass(audio: np.ndarray, lo: float = 150.0, hi: float = 700.0) -> np.ndarray:
+    """
+    Bandpass filter focused on vocal fundamental range (150–700 Hz).
+    Attenuates bass guitar, kick drum, and high-pitched instruments so pYIN
+    is more likely to track the vocal melody rather than background elements.
+    """
+    nyq = SAMPLE_RATE / 2
+    b, a = butter(4, [lo / nyq, hi / nyq], btype='band')
+    return filtfilt(b, a, audio)
+
+
 # ---------------------------------------------------------------------------
 # DB helpers
 # ---------------------------------------------------------------------------
 
 def get_pending(db, limit=None):
-    """Songs whose note_count is still NULL (not yet fingerprinted).
-
-    Checking note_count on the songs table avoids querying the fingerprints
-    table, which can have tens of thousands of rows and hits Supabase's default
-    1 000-row page limit — causing a false count of done songs.
-    """
+    """Songs whose note_count is still NULL (not yet fingerprinted)."""
     rows = (db.table("songs")
               .select("id, title, artist")
               .is_("note_count", "null")
               .order("created_at")
               .execute().data)
     return rows[:limit] if limit else rows
+
+
+def get_all_songs(db, limit=None):
+    """All songs — used for --rescan to re-fingerprint even already-done songs."""
+    rows = (db.table("songs")
+              .select("id, title, artist")
+              .order("created_at")
+              .execute().data)
+    return rows[:limit] if limit else rows
+
+
+def wipe_fingerprint(db, song_id):
+    """Delete existing n-gram rows and reset note_count so the song can be re-fingerprinted."""
+    db.table("fingerprints").delete().eq("song_id", song_id).execute()
+    db.table("songs").update({"note_count": None, "intervals_s1": None,
+                               "intervals_s2": None, "contour": None,
+                               "chroma_mean": None}).eq("id", song_id).execute()
 
 
 def store_fingerprint(db, song_id, fp, chroma_mean):
@@ -136,16 +162,20 @@ def fingerprint_file(path):
     if len(audio) < SAMPLE_RATE * 5:
         raise ValueError("loaded clip shorter than 5 s")
 
-    # Preprocessing chain (mirrors preprocess() but skips the file-decode step)
+    # Preprocessing chain (mirrors preprocess() but with library-specific steps)
     audio = normalize(audio)
     audio = highpass_filter(audio)
     audio = reduce_noise(audio)
     audio = isolate_harmonic(audio)
     audio = normalize(audio)
     audio = trim_silence(audio, top_db=35)
-    audio = preemphasis(audio)
+    # Bandpass filter to vocal fundamental range — helps pYIN track the lead melody
+    # rather than bass or high-pitched instruments in the polyphonic mix
+    audio_for_pitch = _vocal_bandpass(audio)
+    audio_for_pitch = normalize(audio_for_pitch)
+    audio_for_pitch = preemphasis(audio_for_pitch)
 
-    frames = extract_pitch_frames(audio)
+    frames = extract_pitch_frames(audio_for_pitch)
     if len(frames) < 10:
         raise ValueError(f"only {len(frames)} voiced frames — melody too sparse")
 
@@ -158,7 +188,9 @@ def fingerprint_file(path):
         raise ValueError("fingerprint returned None")
 
     try:
-        chroma      = extract_chroma(audio)
+        # Use the full (non-bandpassed) audio for chroma — it has fuller harmonic content
+        chroma_full = preemphasis(audio)
+        chroma      = extract_chroma(chroma_full)
         chroma_mean = chroma.mean(axis=1).tolist() if chroma is not None else None
     except Exception:
         chroma_mean = None
@@ -174,12 +206,19 @@ def main():
     ap = argparse.ArgumentParser(description="Fingerprint the Harmonix song library")
     ap.add_argument("--limit",   type=int, default=None, help="Max songs to process")
     ap.add_argument("--dry-run", action="store_true",    help="List without processing")
+    ap.add_argument("--rescan",  action="store_true",    help="Re-fingerprint ALL songs (wipes existing n-grams first)")
     args = ap.parse_args()
 
-    db      = get_client()
-    pending = get_pending(db, limit=args.limit)
+    db = get_client()
 
-    print(f"\nHarmonix Library Fingerprinter")
+    if args.rescan:
+        pending = get_all_songs(db, limit=args.limit)
+        mode_label = "RESCAN (re-fingerprint all)"
+    else:
+        pending = get_pending(db, limit=args.limit)
+        mode_label = "new/pending only"
+
+    print(f"\nHarmonix Library Fingerprinter  [{mode_label}]")
     print(f"{len(pending)} song(s) to process\n")
 
     if args.dry_run:
@@ -196,6 +235,12 @@ def main():
         sid    = song["id"]
 
         print(f"[{idx:3}/{len(pending)}]  {artist} -- {title}")
+
+        if args.rescan:
+            sys.stdout.write("          > wiping old fingerprint ...  ")
+            sys.stdout.flush()
+            wipe_fingerprint(db, sid)
+            print("done")
 
         with tempfile.TemporaryDirectory() as tmp:
             sys.stdout.write("          > downloading ...  ")

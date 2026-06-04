@@ -29,8 +29,8 @@ import numpy as np
 from .note_segmenter import Note
 
 NGRAM_SIZE         = 5
-MIN_NOTES          = 5    # lowered — accept shorter melodic phrases
-CONTOUR_THRESHOLD  = 0.60  # lowered — more sensitive to direction changes
+MIN_NOTES          = 4    # accept even short melodic phrases
+CONTOUR_THRESHOLD  = 0.45  # lower bar for what counts as a melodic direction change
 QUANT_FINE         = 0.5
 QUANT_COARSE       = 1.0
 

@@ -44,18 +44,20 @@ function CyclingSubtitle() {
     return () => clearInterval(t)
   }, [])
   return (
-    <AnimatePresence mode="wait">
-      <motion.span
-        key={idx}
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -4 }}
-        transition={{ duration: 0.25 }}
-        className="font-mono text-[9px] text-muted tracking-widest uppercase"
-      >
-        {NAV_SUBTITLES[idx]}
-      </motion.span>
-    </AnimatePresence>
+    <div className="h-3.5 overflow-hidden relative">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={idx}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.25 }}
+          className="absolute font-mono text-[9px] text-muted tracking-widest uppercase"
+        >
+          {NAV_SUBTITLES[idx]}
+        </motion.span>
+      </AnimatePresence>
+    </div>
   )
 }
 

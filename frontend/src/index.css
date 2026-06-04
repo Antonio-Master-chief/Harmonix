@@ -67,12 +67,13 @@
            text-white transition-all duration-300 rounded-xl;
     background: linear-gradient(135deg, #8B5CF6, #5B21B6);
     box-shadow: 0 0 24px rgba(139,92,246,0.4);
+    will-change: transform;
   }
-  .btn-primary:hover {
+  .btn-primary:hover:not(:disabled) {
     box-shadow: 0 0 48px rgba(139,92,246,0.7), 0 0 80px rgba(139,92,246,0.2);
     transform: translateY(-2px);
   }
-  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
   .btn-primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;

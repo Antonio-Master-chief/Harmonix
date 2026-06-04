@@ -26,11 +26,11 @@ import numpy as np
 
 from .fingerprinter import IntervalFingerprint, contour_match_score
 
-MIN_VOTES           = 2    # lowered — accept fewer matching n-grams
-CONTOUR_MIN         = 0.42   # lowered — more forgiving melodic shape filter
-DTW_BAND            = 0.25   # wider Sakoe-Chiba band for tempo variation
-CONFIDENCE_CUTOFF   = 0.22   # lowered — allow weaker but real matches through
-CHROMA_MIN          = 0.30    # lowered — less strict harmonic sanity check
+MIN_VOTES           = 1    # single matching n-gram can make a candidate
+CONTOUR_MIN         = 0.20   # very forgiving — just needs rough shape agreement
+DTW_BAND            = 0.32   # wide band — handle large tempo variation
+CONFIDENCE_CUTOFF   = 0.06   # very low — let the chroma check be the final filter
+CHROMA_MIN          = 0.18   # permissive chroma — only block obvious mismatches
 
 # Vote weights by (resolution, step_size)
 VOTE_WEIGHTS = {

@@ -68,66 +68,52 @@ const TAGLINES = [
 
 function WelcomeBack({ username, onSignOut }: { username: string; onSignOut: () => void }) {
   const tagline = TAGLINES[username.charCodeAt(0) % TAGLINES.length]
-  const bars = Array.from({ length: 12 })
 
   return (
-    <PageWrapper>
-      <div className="min-h-[88vh] flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm text-center">
-          {/* Animated waveform bars */}
-          <div className="flex items-end justify-center gap-0.5 h-10 mb-8">
-            {bars.map((_, i) => (
-              <motion.div
-                key={i}
-                className="w-1 rounded-full"
-                style={{ background: i % 2 === 0 ? '#8B5CF6' : '#06B6D4', opacity: 0.7 }}
-                animate={{ height: ['8px', `${16 + ((i * 7) % 18)}px`, '8px'] }}
-                transition={{
-                  duration: 1.1 + (i % 4) * 0.15,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: i * 0.07,
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Greeting */}
-          <p className="font-mono text-xs text-muted uppercase tracking-widest mb-3">
-            {timeGreeting()}
-          </p>
-
-          <h1 className="font-display font-extrabold text-5xl mb-1 gradient-text">
-            @{username}
-          </h1>
-
-          <p className="font-mono text-sm text-muted mt-3 mb-10">{tagline}</p>
-
-          {/* Actions */}
-          <div className="space-y-3">
-            <Link
-              to="/"
-              className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
-            >
-              <Mic className="w-4 h-4" /> Start scanning
-            </Link>
-            <Link
-              to="/library"
-              className="btn-ghost w-full flex items-center justify-center gap-2 text-sm"
-            >
-              <Library className="w-4 h-4" /> Open library
-            </Link>
-          </div>
-
-          <button
-            onClick={onSignOut}
-            className="mt-8 flex items-center gap-1.5 mx-auto font-mono text-[10px] text-muted hover:text-neon-pink transition-colors uppercase tracking-widest"
-          >
-            <LogOut className="w-3 h-3" /> Not you? Sign out
-          </button>
+    <div className="min-h-[88vh] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm text-center">
+        {/* CSS waveform bars — lighter than 12 concurrent Framer Motion animations */}
+        <div className="bar-dance flex items-end justify-center gap-0.5 h-14 mb-8">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <span key={i} />
+          ))}
         </div>
+
+        {/* Greeting */}
+        <p className="font-mono text-xs text-muted uppercase tracking-widest mb-3">
+          {timeGreeting()}
+        </p>
+
+        <h1 className="font-display font-extrabold text-5xl mb-1 gradient-text">
+          @{username}
+        </h1>
+
+        <p className="font-mono text-sm text-muted mt-3 mb-10">{tagline}</p>
+
+        {/* Actions */}
+        <div className="space-y-3">
+          <Link
+            to="/"
+            className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
+          >
+            <Mic className="w-4 h-4" /> Start scanning
+          </Link>
+          <Link
+            to="/library"
+            className="btn-ghost w-full flex items-center justify-center gap-2 text-sm"
+          >
+            <Library className="w-4 h-4" /> Open library
+          </Link>
+        </div>
+
+        <button
+          onClick={onSignOut}
+          className="mt-8 flex items-center gap-1.5 mx-auto font-mono text-[10px] text-muted hover:text-neon-pink transition-colors uppercase tracking-widest"
+        >
+          <LogOut className="w-3 h-3" /> Not you? Sign out
+        </button>
       </div>
-    </PageWrapper>
+    </div>
   )
 }
 

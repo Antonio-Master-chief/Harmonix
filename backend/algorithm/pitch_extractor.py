@@ -11,8 +11,8 @@ HOP_LENGTH = 512
 FMIN = librosa.note_to_hz("C2")
 FMAX = librosa.note_to_hz("C7")
 
-VOICED_PROB_THRESHOLD = 0.35   # pYIN confidence cutoff — lowered for humming/whistling
-VIBRATO_SMOOTH_KERNEL = 5      # frames — median filter to cancel vibrato
+VOICED_PROB_THRESHOLD = 0.20   # pYIN confidence cutoff — very sensitive for humming
+VIBRATO_SMOOTH_KERNEL = 3      # frames — smaller kernel = more note changes captured
 
 
 @dataclass

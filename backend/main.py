@@ -88,16 +88,16 @@ def _run_pipeline(file_bytes: bytes, is_polyphonic: bool = False):
         audio = separate_vocals(audio)
 
     frames = extract_pitch_frames(audio)
-    if len(frames) < 15:
+    if len(frames) < 6:
         raise HTTPException(422,
             "Not enough pitched audio detected. "
-            "Sing, hum, or whistle clearly for at least 3 seconds.")
+            "Sing, hum, or whistle clearly for at least 2 seconds.")
 
     notes = segment_notes(frames)
-    if len(notes) < 6:
+    if len(notes) < 4:
         raise HTTPException(422,
             f"Only {len(notes)} note(s) detected. "
-            "Please sing at least 6 distinct notes.")
+            "Please sing at least 4 distinct notes.")
 
     fp = build_fingerprint(notes)
     if fp is None:
@@ -154,6 +154,10 @@ async def identify(
              len(db_rows), len(all_hashes))
 
     if not db_rows:
+        log.info("No matching n-gram hashes — trying chroma fallback")
+        fb = _try_chroma_fallback(db, query_chroma, notes, fp, key_info, user)
+        if fb:
+            return fb
         return _no_match(notes, fp, key_info)
 
     # Stage 1: vote
@@ -161,6 +165,10 @@ async def identify(
     log.info("Candidates after voting: %d", len(candidates))
 
     if not candidates:
+        log.info("No candidates after voting — trying chroma fallback")
+        fb = _try_chroma_fallback(db, query_chroma, notes, fp, key_info, user)
+        if fb:
+            return fb
         return _no_match(notes, fp, key_info)
 
     # Fetch full data for top 5 candidates
@@ -191,6 +199,9 @@ async def identify(
 
     if best is None:
         log.info("No confident match after ranking (best: %s)", ranked[0] if ranked else None)
+        fb = _try_chroma_fallback(db, query_chroma, notes, fp, key_info, user)
+        if fb:
+            return fb
         return _no_match(notes, fp, key_info)
 
     meta = song_data[best["song_id"]]
@@ -224,6 +235,9 @@ async def identify(
     }
 
 
+CHROMA_FALLBACK_MIN = 0.68   # minimum cosine similarity to accept a chroma-only match
+
+
 def _no_match(notes, fp, key_info):
     return {
         "match":              None,
@@ -231,6 +245,78 @@ def _no_match(notes, fp, key_info):
         "key_detected":       key_info,
         "notes_detected":     len(notes),
         "intervals_detected": len(fp.intervals_s1),
+    }
+
+
+def _try_chroma_fallback(db, query_chroma, notes, fp, key_info, user):
+    """
+    Last-resort match by chromagram similarity.
+    Used when n-gram voting finds 0 candidate songs — typically because library
+    songs were fingerprinted from polyphonic audio and stored intervals don't
+    match the user's clean hum intervals.
+    Queries all songs, computes 12-rotation-invariant cosine similarity, and
+    returns the best match if it clears CHROMA_FALLBACK_MIN.
+    """
+    if query_chroma is None:
+        return None
+
+    import numpy as np
+    from algorithm.chromagram import chroma_similarity
+
+    songs_resp = (
+        db.table("songs")
+        .select("id, title, artist, album, genre, chroma_mean")
+        .execute()
+    )
+    if not songs_resp.data:
+        return None
+
+    best_score = 0.0
+    best_meta  = None
+
+    for song in songs_resp.data:
+        if not song.get("chroma_mean"):
+            continue
+        song_chroma = np.array(song["chroma_mean"]).reshape(12, 1)
+        score = chroma_similarity(query_chroma, song_chroma)
+        if score > best_score:
+            best_score = score
+            best_meta  = song
+
+    if best_score < CHROMA_FALLBACK_MIN or best_meta is None:
+        log.info("Chroma fallback: best score %.3f < threshold %.3f — no match",
+                 best_score, CHROMA_FALLBACK_MIN)
+        return None
+
+    confidence = round(best_score * 0.45, 3)
+    log.info("Chroma fallback match: %s — %s (chroma %.3f, conf %.3f)",
+             best_meta["artist"], best_meta["title"], best_score, confidence)
+
+    _log_history(db, user, best_meta["id"], confidence, len(notes), matched=True)
+
+    return {
+        "match": {
+            "song_id":       best_meta["id"],
+            "title":         best_meta["title"],
+            "artist":        best_meta["artist"],
+            "album":         best_meta.get("album"),
+            "genre":         best_meta.get("genre"),
+            "confidence":    confidence,
+            "dtw_distance":  0.0,
+            "votes":         0,
+            "fine_votes":    0,
+            "skip_votes":    0,
+            "contour_score": 0.0,
+            "chroma_score":  round(best_score, 3),
+        },
+        "key_detected":       key_info,
+        "notes_detected":     len(notes),
+        "intervals_detected": len(fp.intervals_s1),
+        "debug": {
+            "candidates_voted":  0,
+            "candidates_ranked": 0,
+            "via":               "chroma_fallback",
+        },
     }
 
 
