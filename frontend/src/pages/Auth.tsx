@@ -132,7 +132,11 @@ export default function Auth() {
 
   if (user) {
     const name = profile?.username ?? user.email?.split('@')[0] ?? 'listener'
-    return <WelcomeBack username={name} onSignOut={async () => { await signOut(); navigate('/auth') }} />
+    return (
+      <PageWrapper>
+        <WelcomeBack username={name} onSignOut={async () => { await signOut(); navigate('/auth') }} />
+      </PageWrapper>
+    )
   }
 
   const submit = async (e: FormEvent) => {
