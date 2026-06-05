@@ -91,9 +91,11 @@ export default function Profile() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-7 h-7 text-violet animate-spin" />
-      </div>
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-7 h-7 text-violet animate-spin" />
+        </div>
+      </PageWrapper>
     )
   }
 
